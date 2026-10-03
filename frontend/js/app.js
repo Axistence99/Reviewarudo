@@ -76,8 +76,35 @@ $('main').addEventListener('click',event=>{
   if(b.dataset.export==='print')printMaterial(material);
   if(b.dataset.sectionImage!==undefined){const t=material.topics[Number(b.dataset.sectionImage)];cardImage(t.title,`${t.summary}\n\n${t.key_points.join('\n')}\n\nSource: ${t.source_reference.file} — ${t.source_reference.page}`);}
 });
-function applyTheme(dark){document.documentElement.classList.toggle('dark',dark);$('theme').querySelector('span').textContent=dark?'Light mode':'Dark mode';$('theme').setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');}
-try{applyTheme(localStorage.getItem('reviewarudo-theme')==='dark');}catch{applyTheme(false);}
-$('theme').onclick=()=>{const dark=!document.documentElement.classList.contains('dark');applyTheme(dark);try{localStorage.setItem('reviewarudo-theme',dark?'dark':'light');}catch{}};
+const deviceTheme = window.matchMedia('(prefers-color-scheme: dark)');
+let savedTheme = null;
+try { savedTheme = localStorage.getItem('reviewarudo-theme'); } catch {}
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  const label = dark ? 'Light mode' : 'Dark mode';
+  $('theme').innerHTML = `<i data-lucide="${dark ? 'sun' : 'moon'}"></i><span>${label}</span>`;
+  $('theme').setAttribute('aria-label', `Switch to ${label.toLowerCase()}`);
+  $('theme').setAttribute('title', `Switch to ${label.toLowerCase()}`);
+  $('theme').setAttribute('aria-pressed', String(dark));
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#14231c' : '#f7f9f8';
+  icons();
+}
+applyTheme(savedTheme === 'dark' || (savedTheme !== 'light' && deviceTheme.matches));
+$('theme').onclick = () => {
+  const dark = !document.documentElement.classList.contains('dark');
+  savedTheme = dark ? 'dark' : 'light';
+  applyTheme(dark);
+  try { localStorage.setItem('reviewarudo-theme', savedTheme); } catch {}
+};
+deviceTheme.addEventListener('change', event => {
+  if (savedTheme !== 'light' && savedTheme !== 'dark') applyTheme(event.matches);
+});
+window.addEventListener('storage', event => {
+  if (event.key === 'reviewarudo-theme' || event.key === null) {
+    savedTheme = event.newValue;
+    applyTheme(savedTheme === 'dark' || (savedTheme !== 'light' && deviceTheme.matches));
+  }
+});
 $('clear').onclick=()=>{if(busy||!confirm('Clear this study session and its generated materials? Export anything you want to keep first.'))return;material=null;files=[];documents=[];try{sessionStorage.removeItem('reviewarudo-material');}catch{}invalidate();for(const view of Object.keys(labels).filter(x=>x!=='upload'))$('view-'+view).replaceChildren();$('print-content').replaceChildren();$('step-study').classList.remove('active');show('upload');notify('');};
 show('upload');window.addEventListener('load',icons);

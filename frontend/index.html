@@ -4,6 +4,16 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#287b55"><meta name="description" content="Turn your lecture notes into source-grounded reviewers, flashcards, and quizzes.">
 <title>Reviewarudo — Your next study breakthrough</title>
+<script>
+// Apply the saved/device theme before styles load to avoid a light flash.
+(function () {
+  let saved = null;
+  try { saved = localStorage.getItem('reviewarudo-theme'); } catch {}
+  const dark = saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+})();
+</script>
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
@@ -27,7 +37,7 @@
 <button class="nav-link" data-view="export">Export</button>
 </nav>
 <div class="header-actions">
-<button class="header-icon" id="theme" aria-label="Switch to dark mode" title="Change theme"><i data-lucide="moon"></i><span class="sr-only">Dark mode</span></button>
+<button class="header-icon theme-toggle" id="theme" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode"><i data-lucide="moon"></i><span>Dark mode</span></button>
 <button class="header-icon" id="clear" aria-label="Clear study session" title="Clear study session"><i data-lucide="trash-2"></i></button>
 <button class="button primary nav-create" data-view="upload"><i data-lucide="plus"></i><span>Create reviewer</span></button>
 </div>

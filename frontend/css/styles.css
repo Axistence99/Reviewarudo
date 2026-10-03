@@ -70,3 +70,21 @@ main { padding-top: 24px; }
   .site-header .brand { font-size: 16px; }
   .site-header .brand-mark { display: none; }
 }
+
+/* Theme-aware native controls and a discoverable light/dark switch. */
+:root { color-scheme: light; }
+:root.dark { color-scheme: dark; }
+.site-header .theme-toggle { display: flex; align-items: center; justify-content: center; gap: 7px; width: auto; padding: 9px 11px; font-size: 11px; white-space: nowrap; }
+.dark .site-header { box-shadow: 0 6px 24px #0003; }
+.dark .dropzone { border-color: #587361; }
+.dark .material-option:has(input:checked) { border-color: #83cba1; }
+.dark .flash-back { border-color: #587361; }
+.dark .choice.selected { border-color: #83cba1; }
+.dark .button.secondary:hover { background: var(--tint); }
+.dark .header-icon:hover { background: var(--tint); color: var(--ink); }
+.dark ::selection { background: #83cba1; color: #14231c; }
+@media (max-width: 1250px) {
+  .site-header .theme-toggle { width: 38px; padding: 9px; }
+  .theme-toggle span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+}
+@media (max-width: 640px) { .site-header .theme-toggle { width: 32px; padding: 7px; } }
