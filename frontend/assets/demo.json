@@ -1,0 +1,440 @@
+{
+  "title": "Cell Biology: The Building Blocks of Life",
+  "source_files": [
+    "Cell Biology — sample notes.pdf"
+  ],
+  "summary": {
+    "overview": "Cells are the basic units of life. Their structures work together to regulate transport, store genetic information, synthesize proteins, and supply energy.",
+    "section_summaries": [
+      "Cells share basic structures but differ in organization.",
+      "Eukaryotic organelles carry out specialized functions.",
+      "Plant cells have structures supporting photosynthesis, storage, and rigidity."
+    ],
+    "key_takeaways": [
+      "Match each cell structure to its function.",
+      "Distinguish prokaryotic and eukaryotic organization.",
+      "Recognize characteristic plant-cell structures."
+    ],
+    "final_review": "Focus on structure–function relationships rather than memorizing names in isolation.",
+    "source_reference": {
+      "file": "Cell Biology — sample notes.pdf",
+      "page": 1
+    }
+  },
+  "topics": [
+    {
+      "title": "What makes a cell?",
+      "summary": "Cells are the basic structural and functional units of living organisms. The cell membrane separates the cell from its surroundings.",
+      "key_points": [
+        "The cell membrane regulates the entry and exit of substances.",
+        "Prokaryotic cells do not have a membrane-bound nucleus.",
+        "Eukaryotic cells have a membrane-bound nucleus."
+      ],
+      "key_terms": [
+        {
+          "term": "Cell",
+          "definition": "The basic structural and functional unit of living organisms.",
+          "source_reference": {
+            "file": "Cell Biology — sample notes.pdf",
+            "page": 1
+          }
+        },
+        {
+          "term": "Cell membrane",
+          "definition": "A selectively permeable boundary that regulates movement into and out of a cell.",
+          "source_reference": {
+            "file": "Cell Biology — sample notes.pdf",
+            "page": 1
+          }
+        }
+      ],
+      "examples": [
+        "Prokaryotic DNA is not enclosed in a membrane-bound nucleus."
+      ],
+      "relationships": [
+        "Membrane selectivity supports regulation of the cell’s internal environment."
+      ],
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "title": "Organelles and their jobs",
+      "summary": "Eukaryotic cells contain specialized structures that perform essential functions.",
+      "key_points": [
+        "The nucleus contains most cellular DNA.",
+        "Mitochondria are involved in ATP production.",
+        "Ribosomes synthesize proteins."
+      ],
+      "key_terms": [
+        {
+          "term": "Nucleus",
+          "definition": "An organelle that contains most of a eukaryotic cell’s DNA.",
+          "source_reference": {
+            "file": "Cell Biology — sample notes.pdf",
+            "page": 2
+          }
+        },
+        {
+          "term": "Mitochondrion",
+          "definition": "An organelle involved in aerobic cellular respiration and ATP production.",
+          "source_reference": {
+            "file": "Cell Biology — sample notes.pdf",
+            "page": 2
+          }
+        },
+        {
+          "term": "Ribosome",
+          "definition": "A structure that synthesizes proteins.",
+          "source_reference": {
+            "file": "Cell Biology — sample notes.pdf",
+            "page": 2
+          }
+        }
+      ],
+      "examples": [],
+      "relationships": [
+        "Different structures divide the work of maintaining the cell."
+      ],
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "title": "A closer look at plant cells",
+      "summary": "Plant cells have a cell wall, chloroplasts in photosynthetic tissues, and a large central vacuole.",
+      "key_points": [
+        "Cell walls provide support outside the membrane.",
+        "Chloroplasts carry out photosynthesis.",
+        "The central vacuole supports storage and turgor pressure."
+      ],
+      "key_terms": [
+        {
+          "term": "Chloroplast",
+          "definition": "The organelle where photosynthesis occurs in plant cells.",
+          "source_reference": {
+            "file": "Cell Biology — sample notes.pdf",
+            "page": 3
+          }
+        }
+      ],
+      "examples": [
+        "A chloroplast is a photosynthetic organelle."
+      ],
+      "relationships": [
+        "The wall and vacuole contribute to plant-cell support."
+      ],
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    }
+  ],
+  "flashcards": [
+    {
+      "question": "What is the basic unit of life?",
+      "answer": "The cell.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "question": "What does the cell membrane do?",
+      "answer": "It regulates movement of substances into and out of the cell.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "question": "Where is most DNA found in a eukaryotic cell?",
+      "answer": "In the nucleus.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "What is a major role of mitochondria?",
+      "answer": "ATP production through aerobic cellular respiration.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "What do ribosomes make?",
+      "answer": "Proteins.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "Where does photosynthesis take place in plant cells?",
+      "answer": "In chloroplasts.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    },
+    {
+      "question": "What does selectively permeable mean?",
+      "answer": "Some substances can cross the membrane more easily than others.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "question": "How do plant cell walls differ from cell membranes?",
+      "answer": "Cell walls provide rigid support outside the cell membrane; membranes regulate transport.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    },
+    {
+      "question": "Do prokaryotic cells have a membrane-bound nucleus?",
+      "answer": "No. Their DNA is not enclosed in a membrane-bound nucleus.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "question": "What is the role of the large central vacuole in plant cells?",
+      "answer": "Storage and support through maintenance of turgor pressure.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Which structure synthesizes proteins?",
+      "choices": [
+        "Nucleus",
+        "Ribosome",
+        "Cell wall",
+        "Chloroplast"
+      ],
+      "correct_answer": "Ribosome",
+      "explanation": "Ribosomes are responsible for protein synthesis.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "Which structure regulates movement across the cell boundary?",
+      "choices": [
+        "Cell membrane",
+        "Mitochondrion",
+        "Nucleus",
+        "Vacuole"
+      ],
+      "correct_answer": "Cell membrane",
+      "explanation": "The cell membrane is selectively permeable.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "question": "Where does photosynthesis occur in plant cells?",
+      "choices": [
+        "Nucleus",
+        "Ribosome",
+        "Chloroplast",
+        "Cell wall"
+      ],
+      "correct_answer": "Chloroplast",
+      "explanation": "Chloroplasts are the site of photosynthesis in plant cells.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    },
+    {
+      "question": "Which organelle is involved in aerobic ATP production?",
+      "choices": [
+        "Mitochondrion",
+        "Cell wall",
+        "Ribosome",
+        "Central vacuole"
+      ],
+      "correct_answer": "Mitochondrion",
+      "explanation": "Mitochondria are involved in aerobic cellular respiration.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "What distinguishes prokaryotic cells from eukaryotic cells?",
+      "choices": [
+        "No membrane-bound nucleus",
+        "No DNA",
+        "No membrane",
+        "No ribosomes"
+      ],
+      "correct_answer": "No membrane-bound nucleus",
+      "explanation": "Prokaryotic DNA is not enclosed by a nuclear membrane.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    }
+  ],
+  "identification": [
+    {
+      "question": "Identify the structure that synthesizes proteins.",
+      "answer": "Ribosome",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "Identify the organelle involved in photosynthesis.",
+      "answer": "Chloroplast",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    }
+  ],
+  "true_false": [
+    {
+      "statement": "Prokaryotic cells have a membrane-bound nucleus.",
+      "answer": false,
+      "explanation": "They do not have a membrane-bound nucleus.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "statement": "The cell membrane is selectively permeable.",
+      "answer": true,
+      "explanation": "It regulates which substances cross the cell boundary.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    }
+  ],
+  "fill_in_the_blank": [
+    {
+      "question": "The ______ synthesizes proteins.",
+      "answer": "ribosome",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "question": "Photosynthesis takes place in the ______.",
+      "answer": "chloroplast",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    }
+  ],
+  "key_terms": [
+    {
+      "term": "Cell",
+      "definition": "The basic structural and functional unit of living organisms.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "term": "Cell membrane",
+      "definition": "A selectively permeable boundary that regulates movement into and out of a cell.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 1
+      }
+    },
+    {
+      "term": "Nucleus",
+      "definition": "An organelle that contains most of a eukaryotic cell’s DNA.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "term": "Mitochondrion",
+      "definition": "An organelle involved in aerobic cellular respiration and ATP production.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "term": "Ribosome",
+      "definition": "A structure that synthesizes proteins.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 2
+      }
+    },
+    {
+      "term": "Chloroplast",
+      "definition": "The organelle where photosynthesis occurs in plant cells.",
+      "source_reference": {
+        "file": "Cell Biology — sample notes.pdf",
+        "page": 3
+      }
+    }
+  ],
+  "study_guide": {
+    "main_topics": [
+      "Cell organization",
+      "Organelle functions",
+      "Plant cell structures"
+    ],
+    "learning_objectives": [
+      "Compare prokaryotic and eukaryotic cells.",
+      "Match each organelle to its main function."
+    ],
+    "important_concepts": [
+      "Selective permeability",
+      "Structure–function relationships"
+    ],
+    "key_terminology": [
+      "Cell membrane",
+      "Nucleus",
+      "Mitochondrion",
+      "Ribosome",
+      "Chloroplast"
+    ],
+    "common_misconceptions": [
+      "A cell wall and a cell membrane are not the same structure."
+    ],
+    "examples": [
+      "Ribosomes make proteins; chloroplasts carry out photosynthesis."
+    ],
+    "review_questions": [
+      "What distinguishes prokaryotic and eukaryotic organization?",
+      "How do the cell wall and central vacuole contribute to support?"
+    ],
+    "final_summary": "Practice retrieving the function of each structure, then explain how those functions support the cell.",
+    "source_reference": {
+      "file": "Cell Biology — sample notes.pdf",
+      "page": 1
+    }
+  },
+  "warnings": [
+    "Demo content: these are illustrative sample notes, not an uploaded document. Demo citations refer to the included sample-notes.txt sections."
+  ]
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#287b55"><meta name="description" content="Turn your lecture notes into source-grounded reviewers, flashcards, and quizzes.">
+<title>Reviewarudo — Your next study breakthrough</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>if(window.tailwind) tailwind.config = {corePlugins: {preflight: false}};</script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="app-shell">
+<aside class="sidebar">
+<a class="brand" href="./"><span class="brand-mark"><i data-lucide="layers"></i></span>Reviewarudo<span class="brand-dot">.</span></a>
+<div class="workspace-label">YOUR LEARNING SPACE</div>
+<nav aria-label="Main navigation" id="navigation">
+<button class="nav-link active" data-view="upload"><i data-lucide="circle-plus"></i>Create reviewer<span class="nav-plus">+</span></button>
+<div class="nav-heading">STUDY TOOLS</div>
+<button class="nav-link" data-view="reviewer"><i data-lucide="book-open"></i>My reviewer</button>
+<button class="nav-link" data-view="flashcards"><i data-lucide="gallery-vertical-end"></i>Flashcards</button>
+<button class="nav-link" data-view="quiz"><i data-lucide="list-checks"></i>Practice quiz</button>
+<button class="nav-link" data-view="key_terms"><i data-lucide="whole-word"></i>Key terms</button>
+<button class="nav-link" data-view="study_guide"><i data-lucide="route"></i>Study guide</button>
+<button class="nav-link" data-view="export"><i data-lucide="download"></i>Export materials</button>
+</nav>
+<div class="sidebar-bottom"><div class="little-card"><i data-lucide="sprout"></i><strong>A little progress, every day.</strong><p>Your next breakthrough starts with one study session.</p></div><button class="subtle full" id="theme"><i data-lucide="moon"></i><span>Dark mode</span></button><button class="subtle full" id="clear"><i data-lucide="trash-2"></i>Clear study session</button><div class="private-note"><i data-lucide="lock-keyhole"></i>No account. Just learning.</div></div>
+</aside>
+<div class="main-shell">
+<header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="crumb">Create reviewer</strong></div><span class="session-tag"><span></span>Personal study session</span></header>
+<main id="main" tabindex="-1">
+<div id="notification" role="alert" hidden></div>
+<section id="view-upload" class="view">
+<div class="page-heading"><div><div class="eyebrow"><span></span>LESS PREP. MORE PROGRESS.</div><h1>Your notes. A smarter way to study.</h1><p>Turn lecture slides and readings into study materials that click.</p></div><button class="button secondary" id="demo"><i data-lucide="play"></i>Try a demo</button></div>
+<div class="steps" aria-label="Workflow"><div class="step active" id="step-upload"><b>1</b><span>Upload materials</span></div><span class="step-line"></span><div class="step" id="step-config"><b>2</b><span>Make it yours</span></div><span class="step-line"></span><div class="step" id="step-study"><b>3</b><span>Start learning</span></div></div>
+<div class="creation-grid"><div class="upload-column">
+<section class="panel upload-panel"><div class="panel-heading"><div><h2><i data-lucide="files"></i>Your study materials</h2><p>A chapter, a lecture, or the whole topic. Start here.</p></div><span class="badge">STEP 01</span></div>
+<div id="dropzone" class="dropzone"><div class="upload-symbol"><i data-lucide="cloud-upload"></i></div><h3>Drop your files here</h3><p>or browse to find your study materials</p><button class="button primary" id="browse"><i data-lucide="plus"></i>Browse files</button><input type="file" id="file-input" accept=".pdf,.docx,.pptx" multiple hidden><div class="file-types"><span>PDF</span><span>DOCX</span><span>PPTX</span></div><small>Up to 10 MB per file · 8 files · 30 MB total</small></div>
+<div id="files" aria-live="polite"></div>
+<div class="upload-footer"><span><i data-lucide="shield-check"></i>Files processed temporarily, never saved to a database.</span><button class="button secondary small" id="extract" disabled>Extract & preview<i data-lucide="arrow-right"></i></button></div>
+</section>
+<section id="preview-panel" class="panel" hidden><div class="panel-heading"><div><h2>Check your extracted content</h2><p id="extraction-stats"></p></div><i data-lucide="scan-text"></i></div><div id="preview"></div><p class="help">DOCX references use section numbers, not physical pages. Check formulas and tables before generating.</p></section>
+<section class="panel output-panel"><div class="panel-heading"><div><h2><i data-lucide="layout-grid"></i>What would you like to create?</h2><p>Choose one or mix a few. Make learning work for you.</p></div><span class="badge">STEP 02</span></div><div id="material-types" class="material-grid"></div></section>
+<div class="source-note"><i data-lucide="notebook-pen"></i><div><strong>Built from your materials, not guesswork.</strong><p>AI resources include source references so you can go back and check. Always verify important details.</p></div></div>
+</div>
+<aside class="settings-column"><section class="panel settings"><div class="panel-heading"><div><h2><i data-lucide="sliders-horizontal"></i>Make it yours</h2><p>A few preferences. Better study sessions.</p></div></div>
+<label for="learning-style">I’m studying for</label><select id="learning-style"><option>Exam Preparation</option><option>Quick Review</option><option>Detailed Study</option><option>Memorization</option><option>Concept Understanding</option></select>
+<label for="difficulty">Academic level</label><select id="difficulty"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option><option value="college" selected>College / University</option></select>
+<label for="question-difficulty">Question difficulty</label><select id="question-difficulty"><option value="easy">Easy</option><option value="mixed" selected>Mixed difficulty</option><option value="challenging">Challenging</option></select>
+<label for="question-count">Questions per activity</label><div id="counts" class="count-options" role="group" aria-label="Questions per activity"><button data-count="10">10</button><button data-count="20" class="selected">20</button><button data-count="30">30</button><button data-count="50">50</button><button data-count="100">100</button></div><input id="question-count" type="hidden" value="20">
+<label for="language">Language</label><select id="language"><option>English</option><option>Filipino</option><option>Other</option></select><input id="custom-language" aria-label="Custom language" placeholder="Enter a language" maxlength="60" hidden>
+<div class="settings-divider"></div><div class="generation-summary"><span id="selected-count">3 materials selected</span><span><i data-lucide="sparkles"></i>Gemini-powered</span></div><button class="button primary full generate" id="generate"><i data-lucide="sparkles"></i>Generate study materials<i data-lucide="arrow-right"></i></button><p class="settings-footnote">Your files are sent to Google Gemini for generation. Don’t upload sensitive information.</p></section>
+<div class="tip"><span class="tip-title"><i data-lucide="lightbulb"></i>A little study tip</span><p>Test yourself before you feel ready. Active recall helps you remember more than rereading alone.</p></div></aside></div>
+</section>
+<section id="view-reviewer" class="view" hidden></section><section id="view-flashcards" class="view" hidden></section><section id="view-quiz" class="view" hidden></section><section id="view-key_terms" class="view" hidden></section><section id="view-study_guide" class="view" hidden></section><section id="view-export" class="view" hidden></section>
+<footer class="main-footer"><span>Made for curious minds.</span><span>Reviewarudo <span class="footer-star">✳</span> Learn a little better.</span></footer>
+</main></div></div>
+<div id="processing" class="processing" hidden role="status" aria-live="polite"><div class="processing-card"><div class="spinner"></div><span class="eyebrow">YOUR STUDY SESSION IS TAKING SHAPE</span><h2 id="processing-title">Reading your documents…</h2><p id="processing-detail">Uploading and extracting readable content.</p><progress id="upload-progress" max="100" value="0"></progress><p class="help">Large documents take longer. Render’s free service may need a moment to wake up. You can keep this tab open while you wait.</p><span id="elapsed">0 seconds elapsed</span></div></div>
+<div id="print-content"></div>
+<script type="module" src="js/app.js"></script>
+</body></html>

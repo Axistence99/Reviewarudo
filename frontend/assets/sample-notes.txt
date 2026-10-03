@@ -1,0 +1,20 @@
+Cell Biology — sample notes
+Demo-only source corresponding to illustrative PDF page references.
+
+PAGE 1: WHAT MAKES A CELL?
+Cells are the basic structural and functional units of living organisms.
+A cell membrane regulates entry and exit of substances. It is selectively permeable: some substances cross more easily than others.
+Prokaryotic cells do not have a membrane-bound nucleus; their DNA is not enclosed by a nuclear membrane.
+Eukaryotic cells have a membrane-bound nucleus.
+Membrane selectivity helps regulate the cell's internal environment.
+
+PAGE 2: ORGANELLES
+In eukaryotic cells, the nucleus contains most cellular DNA.
+Mitochondria are involved in aerobic cellular respiration and ATP production.
+Ribosomes synthesize proteins. Cell structures divide the work of maintaining the cell.
+
+PAGE 3: PLANT CELLS
+A plant cell wall provides rigid support outside the cell membrane.
+Chloroplasts carry out photosynthesis in photosynthetic plant tissues.
+A large central vacuole provides storage and supports turgor pressure.
+The wall and vacuole contribute to plant-cell support.
