@@ -1,5 +1,5 @@
 // Set this one value after deploying the backend to Render.
-export const API_BASE_URL = 'https://YOUR-RENDER-SERVICE.onrender.com';
+export const API_BASE_URL = 'https://reviewarudo.onrender.com';
 const offline = 'Unable to connect to the learning-material server. Check your internet connection or try again later. Render may need a minute to wake up.';
 export function request(path, body, progress = () => {}) {
   return new Promise((resolve, reject) => {
