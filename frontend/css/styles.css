@@ -88,3 +88,23 @@ main { padding-top: 24px; }
   .theme-toggle span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 }
 @media (max-width: 640px) { .site-header .theme-toggle { width: 32px; padding: 7px; } }
+
+/* Use the original Reviewarudo artwork consistently with the favicon. */
+.site-header .brand-mark {
+  display: block; width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: 10px; overflow: hidden; background: #171e32;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.brand-artwork { display: block; width: 100%; height: 100%; object-fit: contain; }
+.footer-brand { display: inline-flex; align-items: center; gap: 7px; }
+.footer-brand img { border-radius: 5px; flex-shrink: 0; }
+@media (max-width: 640px) {
+  .site-header .brand-mark { display: block; width: 32px; height: 32px; border-radius: 7px; }
+  .footer-brand { gap: 5px; }
+  .footer-brand img { width: 20px; height: 20px; }
+}
+@media (max-width: 370px) {
+  .site-header .brand { font-size: 15px; gap: 4px; }
+  .site-header .nav-create span { font-size: 0; }
+  .site-header .nav-create span::after { content: 'Create'; font-size: 10px; }
+}
