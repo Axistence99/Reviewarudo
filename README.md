@@ -179,6 +179,8 @@ Keep `http://localhost:8080` in backend `CORS_ORIGINS`, and restore the public H
 | `RENDER_GIT_COMMIT` | Supplied by Render; absent locally | Public deployed revision exposed in `/health`; no secret |
 | `API_BASE_URL` | `frontend/js/api.js` | Public backend base URL; currently `https://reviewarudo.onrender.com` |
 
+The outbound Gemini schema omits array-length bounds for compatibility; the backend still strictly validates count limits and four-choice quizzes before returning results. See [generation rules](docs/DEVELOPMENT.md) for details.
+
 Model access, pricing, quotas, and availability depend on your Google project. The app does not select a default Gemini model. Choose a currently supported structured-output model from [Google's model documentation](https://ai.google.dev/gemini-api/docs/models). Never put the API key in frontend code, GitHub Pages, or chat.
 
 ## Testing

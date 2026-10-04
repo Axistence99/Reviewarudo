@@ -185,3 +185,19 @@ arbitrary reason strings, metadata, credentials, or source text. Message-based
 categories are diagnostic hints, not proof of the underlying cause. Unknown or
 malformed responses remain `unclassified`. Retry behavior is unchanged; this
 instrumentation does not itself fix rejected requests or provider outages.
+
+### Outbound schema compatibility
+
+The provider-facing JSON schema omits array `minItems` and `maxItems` constraints
+to avoid a reproduced Gemini rejection of the nested study-material schema.
+This does not change the public request/response contract: Pydantic still
+validates question-count bounds and exactly four distinct quiz choices locally.
+Invalid generated output must pass the existing repair/validation path before
+being returned. Object structure, required fields, references, and other schema
+constraints remain in the provider-facing schema.
+
+No internal provider-comparison route is shipped in the final application.
+The temporary expiring, capability-protected synthetic probe used for this
+investigation was removed after the comparison. Provider quota and high-demand
+errors remain separate from schema compatibility; a successful synthetic probe
+is not an end-to-end document-generation test.

@@ -650,3 +650,103 @@ def test_precondition_diagnostic():
         )
         == "precondition_failed"
     )
+
+
+def test_provider_schema_removes_only_array_bounds():
+    schema = generator.output_schema(["reviewer", "flashcards", "quiz"], 20)
+    original = schema.model_json_schema()
+    wire = gemini.provider_schema(schema)
+
+    def check(before, after):
+        if isinstance(before, dict):
+            expected = set(before) - (
+                {"minItems", "maxItems"} if before.get("type") == "array" else set()
+            )
+            assert set(after) == expected
+            for key in expected:
+                check(before[key], after[key])
+        elif isinstance(before, list):
+            assert len(before) == len(after)
+            for a, b in zip(before, after):
+                check(a, b)
+        else:
+            assert before == after
+
+    check(original, wire)
+    assert original == schema.model_json_schema()
+    assert original["properties"]["quiz"]["maxItems"] == 20
+    assert original["$defs"]["Quiz"]["properties"]["choices"]["minItems"] == 4
+    assert "maxItems" not in wire["properties"]["quiz"]
+    assert "minItems" not in wire["$defs"]["Quiz"]["properties"]["choices"]
+    assert wire["additionalProperties"] is False
+
+
+def test_array_bound_names_in_properties_are_not_removed():
+    class FakeModel:
+        @staticmethod
+        def model_json_schema():
+            return {
+                "type": "object",
+                "properties": {
+                    "minItems": {"type": "integer"},
+                    "maxItems": {"type": "integer"},
+                },
+            }
+
+    assert gemini.provider_schema(FakeModel) == FakeModel.model_json_schema()
+
+
+def test_wire_schema_used_and_local_counts_remain_strict(mock_provider, sample):
+    schema = generator.output_schema(["quiz"], 10)
+    valid = fake_success(sample, schema).model_dump()
+    invalid = copy.deepcopy(valid)
+    invalid["quiz"] = [copy.deepcopy(valid["quiz"][0]) for _ in range(11)]
+    with pytest.raises(ValueError):
+        schema.model_validate(invalid)
+    mock_provider.post.side_effect = [
+        response(json.dumps(invalid)),
+        response(json.dumps(valid)),
+    ]
+    result = asyncio.run(gemini.generate_json("synthetic source", schema))
+    assert len(result.quiz) <= 10
+    assert mock_provider.post.await_count == 2
+    request = mock_provider.post.call_args_list[0].kwargs["json"]
+    assert request["generationConfig"]["responseJsonSchema"] == gemini.provider_schema(
+        schema
+    )
+    assert (
+        "exactly four distinct choices"
+        in request["systemInstruction"]["parts"][0]["text"]
+    )
+    assert (
+        "too_long"
+        in mock_provider.post.call_args_list[1].kwargs["json"]["contents"][0]["parts"][
+            0
+        ]["text"]
+    )
+
+
+@pytest.mark.parametrize("choice_count", [3, 5])
+def test_quiz_choice_bounds_still_enforced_locally(mock_provider, sample, choice_count):
+    schema = generator.output_schema(["quiz"], 10)
+    valid = fake_success(sample, schema).model_dump()
+    invalid = copy.deepcopy(valid)
+    invalid["quiz"][0]["choices"] = [f"Choice {i}" for i in range(choice_count)]
+    invalid["quiz"][0]["correct_answer"] = "Choice 0"
+    with pytest.raises(ValueError):
+        schema.model_validate(invalid)
+    mock_provider.post.side_effect = [
+        response(json.dumps(invalid)),
+        response(json.dumps(valid)),
+    ]
+    result = asyncio.run(gemini.generate_json("synthetic source", schema))
+    assert len(result.quiz[0].choices) == 4
+    assert mock_provider.post.await_count == 2
+
+
+def test_private_probe_route_removed():
+    calls.clear()
+    with TestClient(app) as client:
+        assert client.post("/api/internal/provider-comparison").status_code == 404
+        assert "provider-comparison" not in client.get("/openapi.json").text
+    calls.clear()
