@@ -1,6 +1,6 @@
 import {request} from './api.js';
 import {escapeHTML as e, size, download, asText, cardImage} from './utils.js';
-import {$, icons, notify, source, heading, empty, reviewer, glossary, guide, printMaterial} from './ui.js';
+import {$, icons, notify, source, heading, empty, reviewer, glossary, guide, printMaterial, revealNotice} from './ui.js';
 const types=[['reviewer','book-open','Comprehensive reviewer','The full picture'],['flashcards','gallery-vertical-end','Flashcards','Recall. Flip. Remember.'],['quiz','list-checks','Multiple choice','Put knowledge to the test'],['summary','align-left','Summary','The essentials, distilled'],['key_terms','whole-word','Key terms','Build your vocabulary'],['study_guide','route','Study guide','A clear path to learning'],['identification','search','Identification','Name that concept'],['true_false','circle-check','True or false','Check your understanding'],['fill_in_the_blank','text-cursor-input','Fill in the blank','Connect the missing pieces']];
 let files=[], documents=[], material=null, busy=false, currentView='upload';
 let cardOrder=[], cardIndex=0, known=new Set(), again=new Set();
@@ -17,8 +17,17 @@ function resetStudy(){cardOrder=material.flashcards.map((_,i)=>i);cardIndex=0;kn
 function resetQuiz(){questionIndex=0;answers=[];selected=null;submitted=false;}
 function setMaterial(data){material=data;resetStudy();save();$('step-study').classList.add('active');show('reviewer');}
 try{const stored=sessionStorage.getItem('reviewarudo-material');if(stored){material=JSON.parse(stored);if(!Array.isArray(material.flashcards)||!Array.isArray(material.topics))material=null;else resetStudy();}}catch{material=null;}
-function show(view){if(busy)return;currentView=view;for(const name of Object.keys(labels))$(`view-${name}`).hidden=name!==view;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-current',b.dataset.view===view?'page':'false');});$('crumb').textContent=labels[view];if(view!=='upload')render();icons();}
-$('navigation').addEventListener('click',event=>{const b=event.target.closest('[data-view]');if(b)show(b.dataset.view);});
+function show(view){if(busy)return;currentView=view;for(const name of Object.keys(labels))$(`view-${name}`).hidden=name!==view;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-current',b.dataset.view===view?'page':'false');});$('crumb').textContent=labels[view];if(view!=='upload')render();icons();
+  // View changes do not navigate the browser, so reset the previous view's scroll.
+  window.scrollTo({top: 0, behavior: 'instant'});
+  $('main').focus({preventScroll: true});
+}
+$('navigation').addEventListener('click', event => {
+  const button = event.target.closest('[data-view]');
+  if (!button || busy) return;
+  show(button.dataset.view);
+  if (button.dataset.view === 'upload') $('browse').focus({preventScroll: true});
+});
 function render(){const container=$('view-'+currentView);if(!material){container.innerHTML=empty(labels[currentView].toLowerCase());icons();return;}
   if(currentView==='reviewer'){container.innerHTML=reviewer(material);container.querySelectorAll('[data-read]').forEach(c=>c.checked=readTopics.has(Number(c.dataset.read)));updateRead();}
   if(currentView==='key_terms')container.innerHTML=glossary(material);
@@ -37,7 +46,7 @@ for(const name of ['dragenter','dragover'])$('dropzone').addEventListener(name,e
 for(const name of ['dragleave','drop'])$('dropzone').addEventListener(name,event=>{event.preventDefault();$('dropzone').classList.remove('dragging');});
 $('dropzone').addEventListener('drop',event=>addFiles(event.dataTransfer.files));
 let timer;
-function processing(on,title='',detail=''){busy=on;$('processing').hidden=!on;$('processing-title').textContent=title;$('processing-detail').textContent=detail;document.querySelector('.app-shell').inert=on;$('upload-progress').hidden=false;$('upload-progress').value=0;clearInterval(timer);if(on){const start=Date.now();$('elapsed').textContent='0 seconds elapsed';timer=setInterval(()=>{$('elapsed').textContent=`${Math.floor((Date.now()-start)/1000)} seconds elapsed`;},1000);}renderFiles();}
+function processing(on,title='',detail=''){busy=on;$('processing').hidden=!on;$('processing-title').textContent=title;$('processing-detail').textContent=detail;document.querySelector('.app-shell').inert=on;$('upload-progress').hidden=false;$('upload-progress').value=0;clearInterval(timer);if(on){const start=Date.now();$('elapsed').textContent='0 seconds elapsed';timer=setInterval(()=>{$('elapsed').textContent=`${Math.floor((Date.now()-start)/1000)} seconds elapsed`;},1000);}renderFiles();if(!on)revealNotice();}
 async function extractFiles(){if(!files.length)throw new Error('Add a PDF, DOCX, or PPTX to get started.');const body=new FormData();files.forEach(f=>body.append('files',f));const result=await request('/api/extract',body,p=>{$('upload-progress').value=p;if(p===100)$('processing-detail').textContent='Upload complete. Extracting document text…';});documents=result.files;renderFiles();$('preview-panel').hidden=false;$('extraction-stats').textContent=`${result.characters.toLocaleString()} characters · ~${result.approximate_tokens.toLocaleString()} tokens · ${documents.length} documents`;$('preview').innerHTML=documents.map(d=>`<details><summary>${e(d.filename)} · ${d.sections.length} sections</summary>${d.sections.map(s=>`<h3>${d.source_type==='docx'?'Section':d.source_type==='pptx'?'Slide':'Page'} ${s.page}: ${e(s.title)}</h3><pre>${e(s.content)}</pre>`).join('')}</details>`).join('');$('step-config').classList.add('active');}
 $('extract').onclick=async()=>{if(busy)return;notify('');processing(true,'Reading your documents…','Uploading and extracting readable content.');try{await extractFiles();}catch(err){notify(err.message);}finally{processing(false);}};
 $('generate').onclick=async()=>{if(busy)return;notify('');if(!selectedTypes().length)return notify('Choose at least one material type.');const language=$('language').value==='Other'?$('custom-language').value.trim():$('language').value;if(!language)return notify('Enter the language you want to study in.');if(!files.length)return notify('Upload your study materials first, or try the demo.');

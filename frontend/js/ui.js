@@ -1,7 +1,19 @@
 import {escapeHTML as e, asText} from './utils.js';
 export const $ = id => document.getElementById(id);
 export const icons = () => window.lucide?.createIcons();
-export function notify(message) { $('notification').textContent=message; $('notification').hidden=!message; if(message) $('notification').scrollIntoView({behavior:'smooth',block:'nearest'}); }
+export function revealNotice() {
+  if ($('notification').hidden) return;
+  // The sticky navbar must not cover the feedback after a long-page action.
+  const header = document.querySelector('.site-header');
+  const clearance = (header?.getBoundingClientRect().height || 0) + 32;
+  const top = $('notification').getBoundingClientRect().top + window.scrollY - clearance;
+  window.scrollTo({top: Math.max(0, top), behavior: 'instant'});
+}
+export function notify(message) {
+  $('notification').textContent = message;
+  $('notification').hidden = !message;
+  if (message) revealNotice();
+}
 export function source(ref) {
   if(!ref) return '';
   const type = ref.file?.toLowerCase().endsWith('.pptx')?'Slide':ref.file?.toLowerCase().endsWith('.docx')?'Section':'Page';
