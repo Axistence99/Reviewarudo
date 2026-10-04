@@ -13,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 from services.extraction import extract
 from services.generator import generate
 from services.gemini import AIError
+from services.provider_probe import router as provider_probe_router
 from utils.validation import GenerateRequest
 
 load_dotenv()
@@ -21,6 +22,8 @@ app = FastAPI(
     version="1.0.0",
     description="Temporary document extraction and source-grounded learning materials. Files are not persisted.",
 )
+app.include_router(provider_probe_router)
+
 origins = [
     s.strip()
     for s in os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
