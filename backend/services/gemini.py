@@ -45,6 +45,107 @@ def parse_json(text):
         return value
 
 
+# Only these application-owned labels may leave the provider-error parser.
+# Do not log raw JSON, message substrings, metadata, or arbitrary reason values.
+PROVIDER_DIAGNOSTICS = frozenset(
+    {
+        "api_key_invalid",
+        "api_key_restricted",
+        "service_disabled",
+        "billing_disabled",
+        "schema_too_complex",
+        "schema_rejected",
+        "request_field_unsupported",
+        "model_unsupported",
+        "region_unsupported",
+        "quota_exceeded",
+        "service_unavailable",
+        "unclassified",
+    }
+)
+
+
+def provider_diagnostic(response):
+    """Classify an untrusted provider body without returning any of its text."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return "unclassified"
+    error = payload.get("error") if isinstance(payload, dict) else None
+    if not isinstance(error, dict):
+        return "unclassified"
+    details = error.get("details")
+    reasons = (
+        {
+            item.get("reason")
+            for item in details
+            if isinstance(item, dict)
+            and isinstance(item.get("reason"), str)
+            and item.get("@type") == "type.googleapis.com/google.rpc.ErrorInfo"
+        }
+        if isinstance(details, list)
+        else set()
+    )
+    for reason, category in (
+        ("API_KEY_INVALID", "api_key_invalid"),
+        ("API_KEY_EXPIRED", "api_key_invalid"),
+        ("API_KEY_SERVICE_BLOCKED", "api_key_restricted"),
+        ("API_KEY_HTTP_REFERRER_BLOCKED", "api_key_restricted"),
+        ("API_KEY_IP_ADDRESS_BLOCKED", "api_key_restricted"),
+        ("API_KEY_ANDROID_APP_BLOCKED", "api_key_restricted"),
+        ("API_KEY_IOS_APP_BLOCKED", "api_key_restricted"),
+        ("SERVICE_DISABLED", "service_disabled"),
+        ("BILLING_DISABLED", "billing_disabled"),
+    ):
+        if reason in reasons:
+            return category
+    message = error.get("message")
+    message = message.lower() if isinstance(message, str) else ""
+    # Message matches are diagnostic hints, not authoritative root-cause proof.
+    if "api key not valid" in message or "api key expired" in message:
+        return "api_key_invalid"
+    if "user location is not supported" in message:
+        return "region_unsupported"
+    if "schema" in message and any(
+        term in message
+        for term in (
+            "too many states",
+            "too complex",
+            "too large",
+            "too deeply nested",
+            "too much nesting",
+            "exceeds the maximum",
+        )
+    ):
+        return "schema_too_complex"
+    if "unknown name" in message or "unknown field" in message:
+        return "request_field_unsupported"
+    if any(
+        term in message
+        for term in (
+            "schema",
+            "responsemimetype",
+            "response_mime_type",
+            "structured output",
+        )
+    ):
+        return "schema_rejected"
+    if "model" in message and any(
+        term in message
+        for term in (
+            "not supported",
+            "not found",
+            "does not support",
+        )
+    ):
+        return "model_unsupported"
+    if response.status_code == 429:
+        return "quota_exceeded"
+    if response.status_code in (500, 502, 503, 504):
+        return "service_unavailable"
+    return "unclassified"
+
+
 def provider_error(status):
     # Never expose upstream messages: they can contain credentials or source data.
     if status == 429:
@@ -150,12 +251,22 @@ async def generate_json(prompt, model_type):
                 )
             else:
                 if response.status_code >= 400:
+                    diagnostic = provider_diagnostic(response)
                     logger.warning(
-                        "Gemini HTTP failure; status=%d attempt=%d",
+                        "Gemini HTTP failure; status=%d attempt=%d diagnostic=%s",
                         response.status_code,
                         attempt + 1,
+                        diagnostic,
                     )
                     last_error = provider_error(response.status_code)
+                    # Preserve existing public codes/statuses and include only a
+                    # fixed label so remote diagnostics never require raw logs.
+                    if response.status_code == 400:
+                        last_error = AIError(
+                            f"{last_error} Diagnostic: {diagnostic}.",
+                            last_error.code,
+                            last_error.status_code,
+                        )
                     if response.status_code not in (429, 500, 502, 503, 504):
                         raise last_error
                 else:

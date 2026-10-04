@@ -149,7 +149,7 @@ The UI labels it Page, Slide, or Section based on extension. Coordinates are che
 | `AI_RATE_LIMIT` | 429 | Gemini quota/rate limit; wait or check Google project quota/billing |
 | `AI_ACCESS_DENIED` | 502 | Upstream 401/403; check backend credential and project permissions |
 | `AI_MODEL_NOT_FOUND` | 502 | Upstream 404; check configured model ID/access |
-| `AI_REQUEST_REJECTED` | 502 | Upstream 400; check key, model capabilities, and request compatibility |
+| `AI_REQUEST_REJECTED` | 502 | Upstream 400; message includes a fixed diagnostic category (see below) |
 | `AI_UNAVAILABLE` | 503 | Upstream service failure after bounded attempts |
 | `AI_CONNECTION_ERROR` | 504 | HTTP transport failure or upstream request timeout |
 | `AI_BLOCKED` | 502 | Prompt/candidate blocked by the provider; not malformed JSON |
@@ -162,3 +162,21 @@ The UI labels it Page, Slide, or Section based on extension. Coordinates are che
 | `SERVER_ERROR` | 500 | Unexpected application error; no traceback is returned to the browser |
 
 The wrapper maps errors without returning raw provider messages. Retry/backoff is at most three HTTP attempts per model call; task splitting can create more model calls. Quota/access/outage errors do not split into additional tasks. Upstream 429/5xx must never be described as JSON validation failures.
+
+### Safe provider diagnostics
+
+Upstream HTTP 400 errors retain the `AI_REQUEST_REJECTED` code and HTTP 502
+status. Their message ends with `Diagnostic: <category>.` The Gemini wrapper also
+logs `status`, `attempt`, and `diagnostic` for upstream HTTP failures.
+
+Categories are application-owned labels: `api_key_invalid`, `api_key_restricted`,
+`service_disabled`, `billing_disabled`, `schema_too_complex`, `schema_rejected`,
+`request_field_unsupported`, `model_unsupported`, `region_unsupported`,
+`quota_exceeded`, `service_unavailable`, or `unclassified`.
+
+The classifier checks allowlisted Google ErrorInfo reasons and known message
+patterns internally, but never returns or logs the raw provider body, its message,
+arbitrary reason strings, metadata, credentials, or source text. Message-based
+categories are diagnostic hints, not proof of the underlying cause. Unknown or
+malformed responses remain `unclassified`. Retry behavior is unchanged; this
+instrumentation does not itself fix rejected requests or provider outages.

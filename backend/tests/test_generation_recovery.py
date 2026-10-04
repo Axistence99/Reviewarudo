@@ -451,3 +451,126 @@ def test_chunk_size_cannot_be_smaller_than_the_reference():
     )
     with pytest.raises(ValueError, match="Chunk size"):
         generator.chunks([doc], size=10)
+
+
+@pytest.mark.parametrize(
+    "message,category",
+    [
+        ("API key not valid. Please pass a valid API key.", "api_key_invalid"),
+        ("User location is not supported for the API use.", "region_unsupported"),
+        ("The schema has too many states for serving.", "schema_too_complex"),
+        ("Response schema is too deeply nested.", "schema_too_complex"),
+        (
+            'Invalid JSON payload. Unknown name "responseJsonSchema".',
+            "request_field_unsupported",
+        ),
+        ("Unknown field in request", "request_field_unsupported"),
+        ("Invalid response_schema: unsupported constraint", "schema_rejected"),
+        ("responseMimeType not supported", "schema_rejected"),
+        ("This model is not supported for generateContent", "model_unsupported"),
+        ("Unexpected private content", "unclassified"),
+    ],
+)
+def test_safe_diagnostic_in_log_and_public_error(
+    mock_provider, caplog, message, category
+):
+    secret = "test-secret-never-log private source text private-document.pdf"
+    mock_provider.post.return_value = httpx.Response(
+        400,
+        json={
+            "error": {"message": message + " " + secret, "status": secret},
+        },
+    )
+    with pytest.raises(AIError) as caught:
+        run_json()
+    assert caught.value.code == "AI_REQUEST_REJECTED"
+    assert caught.value.status_code == 502
+    assert f"Diagnostic: {category}." in str(caught.value)
+    assert f"diagnostic={category}" in caplog.text
+    assert mock_provider.post.await_count == 1
+    for private in [
+        message,
+        "test-secret-never-log",
+        "private source text",
+        "private-document.pdf",
+    ]:
+        assert private not in caplog.text
+        assert private not in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "reason,category",
+    [
+        ("API_KEY_INVALID", "api_key_invalid"),
+        ("API_KEY_EXPIRED", "api_key_invalid"),
+        ("API_KEY_SERVICE_BLOCKED", "api_key_restricted"),
+        ("API_KEY_HTTP_REFERRER_BLOCKED", "api_key_restricted"),
+        ("API_KEY_IP_ADDRESS_BLOCKED", "api_key_restricted"),
+        ("API_KEY_ANDROID_APP_BLOCKED", "api_key_restricted"),
+        ("API_KEY_IOS_APP_BLOCKED", "api_key_restricted"),
+        ("SERVICE_DISABLED", "service_disabled"),
+        ("BILLING_DISABLED", "billing_disabled"),
+        ("PRIVATE_SECRET_REASON", "unclassified"),
+    ],
+)
+def test_error_info_reason_allowlist(reason, category):
+    result = gemini.provider_diagnostic(
+        httpx.Response(
+            400,
+            json={
+                "error": {
+                    "message": "private source",
+                    "details": [
+                        {
+                            "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                            "reason": reason,
+                            "metadata": {"key": "secret"},
+                        }
+                    ],
+                }
+            },
+        )
+    )
+    assert result == category
+    assert result in gemini.PROVIDER_DIAGNOSTICS
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        None,
+        [],
+        "private",
+        17,
+        {},
+        {"error": []},
+        {"error": {"message": ["private"], "details": "private"}},
+        {"error": {"details": [None, [], {"reason": {"secret": "private"}}]}},
+        {"error": {"details": [{"reason": "API_KEY_INVALID"}]}},
+    ],
+)
+def test_malformed_diagnostics_are_safe(payload):
+    assert (
+        gemini.provider_diagnostic(httpx.Response(400, json=payload)) == "unclassified"
+    )
+
+
+def test_non_json_provider_body_is_not_exposed(mock_provider, caplog):
+    mock_provider.post.return_value = httpx.Response(
+        400, text="<html>private secret</html>"
+    )
+    with pytest.raises(AIError) as caught:
+        run_json()
+    assert "Diagnostic: unclassified." in str(caught.value)
+    assert "private secret" not in str(caught.value) + caplog.text
+
+
+@pytest.mark.parametrize(
+    "status,category", [(429, "quota_exceeded"), (503, "service_unavailable")]
+)
+def test_diagnostic_does_not_change_retries(mock_provider, caplog, status, category):
+    mock_provider.post.return_value = response(status=status)
+    with pytest.raises(AIError):
+        run_json()
+    assert mock_provider.post.await_count == 3
+    assert f"diagnostic={category}" in caplog.text

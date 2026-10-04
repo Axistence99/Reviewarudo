@@ -39,7 +39,7 @@ Dark is the default unless the user saved light. Session data survives a same-ta
 ## Security and accessibility review points
 
 - Never commit `.env`, private keys, uploaded originals, extracted private text, generated private content, or API credentials. Do not turn diagnostic logs into document storage.
-- The Gemini wrapper logs HTTP status/error categories, not provider text, source content, or credentials. Generic unexpected-error logging still requires operational review before handling sensitive data.
+- The Gemini wrapper logs HTTP status, attempt, and fixed diagnostic categories, not provider text, source content, or credentials. HTTP 400 public messages also include the safe category (see `API.md`). Keep unknown ErrorInfo reasons and malformed bodies unclassified; never interpolate provider values into logs or responses. Generic unexpected-error logging still requires operational review before handling sensitive data.
 - Preserve extension/MIME/signature/ZIP expansion/body/character checks and strict Pydantic validation. Uploaded documents and model outputs are untrusted.
 - Escape every interpolated filename, question, answer, term, and title. Do not use `eval`, raw model HTML, or AI-generated executable code.
 - CORS is a browser-origin policy, not API authorization. Rate limiting is basic/per-process; trusted proxy settings must be verified in the actual hosting environment. Do not broadly trust arbitrary forwarded headers.
