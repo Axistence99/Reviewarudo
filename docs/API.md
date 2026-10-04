@@ -166,13 +166,18 @@ The wrapper maps errors without returning raw provider messages. Retry/backoff i
 ### Safe provider diagnostics
 
 Upstream HTTP 400 errors retain the `AI_REQUEST_REJECTED` code and HTTP 502
-status. Their message ends with `Diagnostic: <category>.` The Gemini wrapper also
-logs `status`, `attempt`, and `diagnostic` for upstream HTTP failures.
+status. Their message includes `Diagnostic: <category>.`, an allowlisted canonical
+Google status (or `unknown`), and a fixed response-body shape label. The Gemini
+wrapper also logs these labels with HTTP `status` and `attempt`.
 
 Categories are application-owned labels: `api_key_invalid`, `api_key_restricted`,
 `service_disabled`, `billing_disabled`, `schema_too_complex`, `schema_rejected`,
 `request_field_unsupported`, `model_unsupported`, `region_unsupported`,
-`quota_exceeded`, `service_unavailable`, or `unclassified`.
+`quota_exceeded`, `service_unavailable`, `api_key_revoked`, `credential_rejected`,
+`generation_setting_rejected`, `payload_too_large`, `precondition_failed`, or
+`unclassified`. Body shapes are `non_json`, `json_non_object`,
+`json_without_error_object`, or `json_error_object`. Unknown provider status
+strings are never copied into logs or public responses.
 
 The classifier checks allowlisted Google ErrorInfo reasons and known message
 patterns internally, but never returns or logs the raw provider body, its message,

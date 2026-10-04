@@ -574,3 +574,79 @@ def test_diagnostic_does_not_change_retries(mock_provider, caplog, status, categ
         run_json()
     assert mock_provider.post.await_count == 3
     assert f"diagnostic={category}" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "message,category",
+    [
+        (
+            "Your API key was reported as leaked. Please use another API key.",
+            "api_key_revoked",
+        ),
+        ("API key revoked", "api_key_revoked"),
+        ("Invalid API key", "api_key_invalid"),
+        ("API key not found", "api_key_invalid"),
+        ("Credential rejected", "credential_rejected"),
+        ("This API key has restrictions", "credential_rejected"),
+        ("temperature is not allowed", "generation_setting_rejected"),
+        ("Developer instruction is not enabled", "generation_setting_rejected"),
+        ("Request payload size exceeds the limit", "payload_too_large"),
+    ],
+)
+def test_additional_safe_diagnostics(message, category):
+    assert (
+        gemini.provider_diagnostic(
+            httpx.Response(
+                400,
+                json={
+                    "error": {"message": message + " PRIVATE_VALUE"},
+                },
+            )
+        )
+        == category
+    )
+    assert category in gemini.PROVIDER_DIAGNOSTICS
+
+
+@pytest.mark.parametrize(
+    "payload,shape,status",
+    [
+        ([], "json_non_object", "unknown"),
+        ({}, "json_without_error_object", "unknown"),
+        (
+            {"error": {"status": "INVALID_ARGUMENT"}},
+            "json_error_object",
+            "INVALID_ARGUMENT",
+        ),
+        ({"error": {"status": "PRIVATE_VALUE"}}, "json_error_object", "unknown"),
+        ({"error": {"status": ["PRIVATE_VALUE"]}}, "json_error_object", "unknown"),
+    ],
+)
+def test_provider_metadata_allowlist(payload, shape, status):
+    assert gemini.provider_error_metadata(httpx.Response(400, json=payload)) == (
+        shape,
+        status,
+    )
+
+
+def test_provider_metadata_non_json():
+    assert gemini.provider_error_metadata(
+        httpx.Response(400, text="PRIVATE_VALUE")
+    ) == ("non_json", "unknown")
+
+
+def test_precondition_diagnostic():
+    assert (
+        gemini.provider_diagnostic(
+            httpx.Response(
+                400,
+                json={
+                    "error": {
+                        "status": "FAILED_PRECONDITION",
+                        "message": "PRIVATE_VALUE",
+                    },
+                },
+            )
+        )
+        == "precondition_failed"
+    )

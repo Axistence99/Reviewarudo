@@ -50,6 +50,11 @@ def parse_json(text):
 PROVIDER_DIAGNOSTICS = frozenset(
     {
         "api_key_invalid",
+        "api_key_revoked",
+        "credential_rejected",
+        "generation_setting_rejected",
+        "payload_too_large",
+        "precondition_failed",
         "api_key_restricted",
         "service_disabled",
         "billing_disabled",
@@ -63,6 +68,40 @@ PROVIDER_DIAGNOSTICS = frozenset(
         "unclassified",
     }
 )
+
+
+PROVIDER_STATUSES = frozenset(
+    {
+        "INVALID_ARGUMENT",
+        "FAILED_PRECONDITION",
+        "UNAUTHENTICATED",
+        "PERMISSION_DENIED",
+        "NOT_FOUND",
+        "RESOURCE_EXHAUSTED",
+        "INTERNAL",
+        "UNAVAILABLE",
+        "DEADLINE_EXCEEDED",
+        "OUT_OF_RANGE",
+        "UNIMPLEMENTED",
+    }
+)
+
+
+def provider_error_metadata(response):
+    """Return fixed body-shape and canonical-status labels, never provider text."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return "non_json", "unknown"
+    if not isinstance(payload, dict):
+        return "json_non_object", "unknown"
+    error = payload.get("error")
+    if not isinstance(error, dict):
+        return "json_without_error_object", "unknown"
+    status = error.get("status")
+    return "json_error_object", (
+        status if isinstance(status, str) and status in PROVIDER_STATUSES else "unknown"
+    )
 
 
 def provider_diagnostic(response):
@@ -102,7 +141,17 @@ def provider_diagnostic(response):
     message = error.get("message")
     message = message.lower() if isinstance(message, str) else ""
     # Message matches are diagnostic hints, not authoritative root-cause proof.
-    if "api key not valid" in message or "api key expired" in message:
+    if "api key" in message and any(term in message for term in ("leaked", "revoked")):
+        return "api_key_revoked"
+    if any(
+        term in message
+        for term in (
+            "api key not valid",
+            "api key expired",
+            "invalid api key",
+            "api key not found",
+        )
+    ):
         return "api_key_invalid"
     if "user location is not supported" in message:
         return "region_unsupported"
@@ -139,6 +188,38 @@ def provider_diagnostic(response):
         )
     ):
         return "model_unsupported"
+    if any(term in message for term in ("api key", "api_key", "credential")):
+        return "credential_rejected"
+    if any(
+        term in message
+        for term in (
+            "temperature",
+            "top_p",
+            "topp",
+            "top_k",
+            "topk",
+            "thinking_budget",
+            "thinkingbudget",
+            "maxoutputtokens",
+            "generationconfig",
+            "system instruction",
+            "systeminstruction",
+            "developer instruction",
+        )
+    ):
+        return "generation_setting_rejected"
+    if any(
+        term in message
+        for term in (
+            "payload size",
+            "request too large",
+            "token count exceeds",
+            "input token limit",
+        )
+    ):
+        return "payload_too_large"
+    if error.get("status") == "FAILED_PRECONDITION":
+        return "precondition_failed"
     if response.status_code == 429:
         return "quota_exceeded"
     if response.status_code in (500, 502, 503, 504):
@@ -252,18 +333,22 @@ async def generate_json(prompt, model_type):
             else:
                 if response.status_code >= 400:
                     diagnostic = provider_diagnostic(response)
+                    body_shape, provider_status = provider_error_metadata(response)
                     logger.warning(
-                        "Gemini HTTP failure; status=%d attempt=%d diagnostic=%s",
+                        "Gemini HTTP failure; status=%d attempt=%d diagnostic=%s body=%s provider_status=%s",
                         response.status_code,
                         attempt + 1,
                         diagnostic,
+                        body_shape,
+                        provider_status,
                     )
                     last_error = provider_error(response.status_code)
                     # Preserve existing public codes/statuses and include only a
                     # fixed label so remote diagnostics never require raw logs.
                     if response.status_code == 400:
                         last_error = AIError(
-                            f"{last_error} Diagnostic: {diagnostic}.",
+                            f"{last_error} Diagnostic: {diagnostic}. "
+                            f"Provider status: {provider_status}. Response type: {body_shape}.",
                             last_error.code,
                             last_error.status_code,
                         )
