@@ -33,7 +33,15 @@ async def compare(request: Request, mode: str = "minimal"):
         hashlib.sha256(token.encode()).hexdigest(), TOKEN_HASH
     ):
         raise HTTPException(404)
-    if mode not in {"minimal", "small_schema", "app_schema", "new_format"}:
+    if mode not in {
+        "minimal",
+        "small_schema",
+        "app_schema",
+        "new_format",
+        "app_inline",
+        "app_unbounded",
+        "json_mode",
+    }:
         raise HTTPException(400)
     async with lock:
         if mode in results:
@@ -71,10 +79,30 @@ async def compare(request: Request, mode: str = "minimal"):
                     ["reviewer", "flashcards", "quiz"], 20
                 ).model_json_schema()
             )
+            if mode in {"app_inline", "app_unbounded"}:
+                definitions = schema.get("$defs", {})
+
+                def transform(value):
+                    if isinstance(value, list):
+                        return [transform(item) for item in value]
+                    if not isinstance(value, dict):
+                        return value
+                    if mode == "app_inline" and "$ref" in value:
+                        return transform(definitions[value["$ref"].split("/")[-1]])
+                    return {
+                        k: transform(v)
+                        for k, v in value.items()
+                        if not (mode == "app_inline" and k == "$defs")
+                        and not (
+                            mode == "app_unbounded" and k in {"minItems", "maxItems"}
+                        )
+                    }
+
+                schema = transform(schema)
             body["generationConfig"] = {"temperature": 0.2}
             if mode == "new_format":
                 body["generationConfig"]["responseFormat"] = {
-                    "text": {"mimeType": "application/json", "schema": schema}
+                    "text": {"mimeType": "APPLICATION_JSON", "schema": schema}
                 }
             else:
                 body["generationConfig"].update(
@@ -83,6 +111,8 @@ async def compare(request: Request, mode: str = "minimal"):
                         "responseJsonSchema": schema,
                     }
                 )
+            if mode == "json_mode":
+                body["generationConfig"].pop("responseJsonSchema", None)
         try:
             async with httpx.AsyncClient(timeout=90) as client:
                 response = await client.post(
