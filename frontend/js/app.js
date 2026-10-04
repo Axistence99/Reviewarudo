@@ -6,10 +6,10 @@ let files=[], documents=[], material=null, busy=false, currentView='upload';
 let cardOrder=[], cardIndex=0, known=new Set(), again=new Set();
 let mode='quiz', questionIndex=0, answers=[], selected=null, submitted=false;
 let readTopics=new Set();
-const labels={upload:'Create reviewer',reviewer:'My reviewer',flashcards:'Flashcards',quiz:'Practice quiz',key_terms:'Key terms',study_guide:'Study guide',export:'Export materials'};
+const labels={library:'My library',progress:'Study progress',upload:'Create reviewer',reviewer:'My reviewer',flashcards:'Flashcards',quiz:'Practice quiz',key_terms:'Key terms',study_guide:'Study guide',export:'Export materials'};
 $('material-types').innerHTML=types.map(([value,icon,title,desc],i)=>`<label class="material-option"><input type="checkbox" name="material" value="${value}" ${i<3?'checked':''}><i data-lucide="${icon}"></i><strong>${title}</strong><small>${desc}</small></label>`).join('');
 const selectedTypes=()=>[...document.querySelectorAll('input[name=material]:checked')].map(x=>x.value);
-$('material-types').addEventListener('change',()=>{$('selected-count').textContent=`${selectedTypes().length} materials selected`;});
+$('material-types').addEventListener('change',()=>{$('selected-count').textContent=`${selectedTypes().length} materials selected`;updateStudySet();});
 $('counts').addEventListener('click',event=>{const b=event.target.closest('[data-count]');if(!b)return;$('question-count').value=b.dataset.count;for(const x of $('counts').children){x.classList.toggle('selected',x===b);x.setAttribute('aria-pressed',x===b);}});
 $('language').addEventListener('change',()=>{$('custom-language').hidden=$('language').value!=='Other';});
 function save(){try{sessionStorage.setItem('reviewarudo-material',JSON.stringify(material));}catch{notify('Your material is ready, but browser storage is unavailable or full. Export it before closing this tab.');}}
@@ -17,18 +17,36 @@ function resetStudy(){cardOrder=material.flashcards.map((_,i)=>i);cardIndex=0;kn
 function resetQuiz(){questionIndex=0;answers=[];selected=null;submitted=false;}
 function setMaterial(data){material=data;resetStudy();save();$('step-study').classList.add('active');show('reviewer');}
 try{const stored=sessionStorage.getItem('reviewarudo-material');if(stored){material=JSON.parse(stored);if(!Array.isArray(material.flashcards)||!Array.isArray(material.topics))material=null;else resetStudy();}}catch{material=null;}
-function show(view){if(busy)return;currentView=view;for(const name of Object.keys(labels))$(`view-${name}`).hidden=name!==view;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-current',b.dataset.view===view?'page':'false');});$('crumb').textContent=labels[view];$('material-downloads').hidden=!material||view==='upload'||view==='export';if(view!=='upload')render();icons();
+function show(view){if(busy)return;currentView=view;for(const name of Object.keys(labels))$(`view-${name}`).hidden=name!==view;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-current',b.dataset.view===view?'page':'false');});$('crumb').textContent=labels[view];$('material-downloads').hidden=!material||['upload','export','library','progress'].includes(view);$('study-tools').hidden=!material;document.querySelector('[data-create]').classList.toggle('active',view==='upload');if(view!=='upload')render();icons();
   // View changes do not navigate the browser, so reset the previous view's scroll.
   window.scrollTo({top: 0, behavior: 'instant'});
   $('main').focus({preventScroll: true});
 }
 $('navigation').addEventListener('click', event => {
-  const button = event.target.closest('[data-view]');
+  const button = event.target.closest('button');
   if (!button || busy) return;
-  show(button.dataset.view);
-  if (button.dataset.view === 'upload') $('browse').focus({preventScroll: true});
+  const view = button.hasAttribute('data-create') ? 'upload' : button.hasAttribute('data-library') ? 'library' : button.dataset.view;
+  if (!view) return;
+  show(view);
+  if (view === 'upload') $('browse').focus({preventScroll: true});
 });
+function updateStudySet() {
+  $('set-status').textContent = files.length ? `${files.length} ${files.length === 1 ? 'material' : 'materials'}, endless possibilities` : 'Ready when you are';
+  $('set-files').innerHTML = files.length ? files.map(file => `<div class="set-file"><i data-lucide="file-text"></i><span title="${e(file.name)}">${e(file.name)}</span><i data-lucide="check"></i></div>`).join('') : '<p>Your materials will appear here.</p>';
+  $('set-types').innerHTML = selectedTypes().map(type => `<span>${e(types.find(t => t[0] === type)[2])}</span>`).join('') || '<p>Select at least one study format.</p>';
+  icons();
+}
+function libraryView() {
+  const resources = types.filter(([key]) => key === 'reviewer' ? material.topics.length : Array.isArray(material[key]) ? material[key].length : material[key]);
+  return heading('Your learning universe.','One study set. Every way to make it yours.','library') + `<div class="session-banner"><i data-lucide="layers"></i><div><strong>${e(material.title)}</strong><p>Current browser session · ${material.source_files.length} source files · Export a copy before clearing this session.</p></div></div><div class="library-grid">${resources.map(([key,icon,title,desc]) => `<article class="panel resource-card"><i data-lucide="${icon}"></i><h2>${e(title)}</h2><p>${e(desc)}</p><button class="button secondary" data-resource="${key}">Open material <i data-lucide="arrow-up-right"></i></button></article>`).join('')}</div>`;
+}
+function progressView() {
+  const correct = answers.filter(Boolean).length;
+  return heading('Small steps. Real progress.','Your activity in this open session. Progress resets when you reload or start a new set.','orbit') + `<div class="progress-grid"><section class="panel progress-card"><h2>Reviewer topics read</h2><strong>${readTopics.size} / ${material.topics.length}</strong><progress value="${readTopics.size}" max="${material.topics.length || 1}"></progress><p>Mark topics as read in your reviewer.</p></section><section class="panel progress-card"><h2>Flashcards known</h2><strong>${known.size} / ${material.flashcards.length}</strong><progress value="${known.size}" max="${material.flashcards.length || 1}"></progress><p>${again.size} cards marked for another review.</p></section><section class="panel progress-card"><h2>Current practice score</h2><strong>${correct} / ${answers.length}</strong><progress value="${correct}" max="${answers.length || 1}"></progress><p>${e(mode.replaceAll('_',' '))} · ${answers.length} submitted answers.</p></section></div>`;
+}
 function render(){const container=$('view-'+currentView);if(!material){container.innerHTML=empty(labels[currentView].toLowerCase());icons();return;}
+  if(currentView==='library')container.innerHTML=libraryView();
+  if(currentView==='progress')container.innerHTML=progressView();
   if(currentView==='reviewer'){container.innerHTML=reviewer(material);container.querySelectorAll('[data-read]').forEach(c=>c.checked=readTopics.has(Number(c.dataset.read)));updateRead();}
   if(currentView==='key_terms')container.innerHTML=glossary(material);
   if(currentView==='study_guide')container.innerHTML=guide(material);
@@ -37,7 +55,7 @@ function render(){const container=$('view-'+currentView);if(!material){container
   if(currentView==='export')container.innerHTML=heading('Take your learning with you.','Save a copy, print a reviewer, or keep a backup.','download')+`<div class="export-grid"><section class="panel"><i data-lucide="file-text"></i><h2>Print-ready PDF</h2><p>All study materials with a separate quiz answer key. Choose “Save as PDF” in your browser’s print dialog.</p><button class="button primary" data-export="print">Print / Save as PDF</button></section><section class="panel"><i data-lucide="file-json"></i><h2>Structured JSON</h2><p>Your complete generated resources, including source references, in a portable data format.</p><button class="button secondary" data-export="json">Download JSON</button></section><section class="panel"><i data-lucide="notebook-text"></i><h2>Plain text</h2><p>A clean, readable copy of all your resources. Bring it into your favorite note-taking app.</p><button class="button secondary" data-export="text">Download text</button></section></div><p class="help">Individual flashcards and reviewer topics can also be saved as PNG images from their study views.</p>`;
   icons();
 }
-function renderFiles(){ $('files').innerHTML=files.map((file,i)=>`<div class="file-card"><i data-lucide="file-text"></i><div><strong>${e(file.name)}</strong><small>${e(file.name.split('.').pop().toUpperCase())} · ${size(file.size)}</small></div><span class="file-status">${documents.length?'✓ Extracted':'Ready'}</span><button aria-label="Remove ${e(file.name)}" data-remove="${i}" ${busy?'disabled':''}><i data-lucide="x"></i></button></div>`).join('');$('extract').disabled=!files.length||busy;icons();}
+function renderFiles(){ $('files').innerHTML=files.map((file,i)=>`<div class="file-card"><i data-lucide="file-text"></i><div><strong>${e(file.name)}</strong><small>${e(file.name.split('.').pop().toUpperCase())} · ${size(file.size)}</small></div><span class="file-status">${documents.length?'✓ Extracted':'Ready'}</span><button aria-label="Remove ${e(file.name)}" data-remove="${i}" ${busy?'disabled':''}><i data-lucide="x"></i></button></div>`).join('');$('extract').disabled=!files.length||busy;updateStudySet();icons();}
 function invalidate(){documents=[];$('preview-panel').hidden=true;$('step-config').classList.remove('active');renderFiles();}
 function addFiles(incoming){if(busy)return;notify('');const errors=[];for(const file of incoming){if(!/\.(pdf|docx|pptx)$/i.test(file.name)){errors.push(`${file.name}: This file type is not supported. Please upload PDF, DOCX, or PPTX.`);continue;}if(file.size>10*1024*1024){errors.push(`${file.name}: exceeds 10 MB.`);continue;}if(files.length>=8||files.reduce((a,f)=>a+f.size,0)+file.size>30*1024*1024){errors.push('Upload up to 8 files and 30 MB total.');continue;}if(files.some(f=>f.name===file.name)){errors.push(`${file.name}: a file with this name is already selected. Rename it if it is a different document.`);continue;}files.push(file);}invalidate();if(errors.length)notify(errors.join(' '));}
 $('browse').onclick=()=>$('file-input').click();$('file-input').onchange=event=>{addFiles(event.target.files);event.target.value='';};
@@ -104,6 +122,13 @@ function downloadMaterial(format) {
 
 $('main').addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b||busy)return;
+  if(b.dataset.view) { show(b.dataset.view); return; }
+  if(b.dataset.resource) {
+    const resource = b.dataset.resource;
+    if (['quiz','identification','true_false','fill_in_the_blank'].includes(resource)) { mode=resource;resetQuiz();show('quiz'); }
+    else show(resource === 'summary' ? 'reviewer' : resource);
+    return;
+  }
   if(b.dataset.download) { downloadMaterial(b.dataset.download); return; }
   if(b.hasAttribute('data-go-upload'))show('upload');
   if(b.id==='flashcard')flip();
@@ -129,24 +154,22 @@ function applyTheme(dark) {
   $('theme').setAttribute('aria-label', `Switch to ${label.toLowerCase()}`);
   $('theme').setAttribute('title', `Switch to ${label.toLowerCase()}`);
   $('theme').setAttribute('aria-pressed', String(dark));
-  document.querySelector('meta[name="theme-color"]').content = dark ? '#14231c' : '#f7f9f8';
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#07070d' : '#f6f3ff';
   icons();
 }
-applyTheme(savedTheme === 'dark' || (savedTheme !== 'light' && deviceTheme.matches));
+applyTheme(savedTheme !== 'light');
 $('theme').onclick = () => {
   const dark = !document.documentElement.classList.contains('dark');
   savedTheme = dark ? 'dark' : 'light';
   applyTheme(dark);
   try { localStorage.setItem('reviewarudo-theme', savedTheme); } catch {}
 };
-deviceTheme.addEventListener('change', event => {
-  if (savedTheme !== 'light' && savedTheme !== 'dark') applyTheme(event.matches);
-});
+
 window.addEventListener('storage', event => {
   if (event.key === 'reviewarudo-theme' || event.key === null) {
     savedTheme = event.newValue;
-    applyTheme(savedTheme === 'dark' || (savedTheme !== 'light' && deviceTheme.matches));
+    applyTheme(savedTheme !== 'light');
   }
 });
 $('clear').onclick=()=>{if(busy||!confirm('Clear this study session and its generated materials? Export anything you want to keep first.'))return;material=null;files=[];documents=[];try{sessionStorage.removeItem('reviewarudo-material');}catch{}invalidate();for(const view of Object.keys(labels).filter(x=>x!=='upload'))$('view-'+view).replaceChildren();$('print-content').replaceChildren();$('step-study').classList.remove('active');show('upload');notify('');};
-show('upload');window.addEventListener('load',icons);
+updateStudySet();show('upload');window.addEventListener('load',icons);

@@ -21,7 +21,9 @@ Reviewarudo turns academic PDFs, Word documents, and PowerPoint presentations in
 - Interactive quizzes with one submission per question, immediate feedback, explanations, progress, score, and restart.
 - Separate practice modes for identification, true/false, and fill-in-the-blank.
 - Browser print / Save as PDF with source files and answer key; JSON and text downloads; individual flashcard/topic PNG exports.
-- Responsive layouts, light/dark themes, visible focus, semantic controls, accessible labels, reduced-motion support.
+- Space-inspired creation workspace with a lavender orbit illustration, responsive creation deck, and live study-set sidebar.
+- Library for the current generated set and in-session reading, flashcard, and quiz progress.
+- Responsive layouts, light/dark themes, visible focus, semantic controls, accessible labels, reduced-motion support. The orbit design defaults to dark; an explicit theme choice is remembered.
 - Demo content with its illustrative source notes under `frontend/assets/`.
 - Temporary generated-resource storage in `sessionStorage`; theme preference in `localStorage`.
 - Backend-only Gemini credentials, typed input/output validation, bounded JSON recovery, safe escaped UI output, CORS allowlist, request limits, and a basic in-memory rate limit.

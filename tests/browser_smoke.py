@@ -5,6 +5,7 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':1440,'height':1100},device_scale_factor=1)
     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto('http://127.0.0.1:8080/',wait_until='networkidle')
+    if page.locator('html').get_attribute('class') == 'dark': page.locator('#theme').click()
     page.screenshot(path='tests/desktop.png',full_page=True)
     assert page.locator('.material-option').count()==9
     page.locator('#demo').click()

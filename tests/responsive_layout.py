@@ -5,6 +5,9 @@ with sync_playwright() as p:
     browser = p.chromium.launch()
     page = browser.new_page()
     page.goto('http://127.0.0.1:8080/', wait_until='networkidle')
+    page.locator('#demo').click()
+    page.locator('#view-reviewer').wait_for(state='visible')
+    page.locator('.nav-create').click()
     for theme in ['light', 'dark']:
         page.evaluate('(dark) => document.documentElement.classList.toggle("dark", dark)', theme == 'dark')
         for width in [320, 360, 375, 390, 430, 640, 768, 980, 1024, 1180, 1280, 1440, 1920]:
@@ -15,7 +18,7 @@ with sync_playwright() as p:
             assert name['x'] - (mark['x'] + mark['width']) >= 11.9, (theme, width, 'brand gap')
             actions = page.locator('.header-actions').bounding_box()
             assert name['x'] + name['width'] <= actions['x'], (theme, width, 'overlap')
-            for control in ['#theme', '#clear', '.nav-create']:
+            for control in ['#theme', '.nav-create']:
                 box = page.locator(control).bounding_box()
                 assert box['height'] >= 43.9, (width, control, 'touch target')
                 assert box['x'] + box['width'] <= width, (width, control, 'clipped')
