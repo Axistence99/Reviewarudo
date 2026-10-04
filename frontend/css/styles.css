@@ -114,3 +114,19 @@ main { padding: 24px 32px 0; }
   .header-icon, .site-header .theme-toggle, .site-header .nav-create { width: 36px; padding: 8px; }
   .material-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+.download-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 28px; }
+.download-intro { display: flex; gap: 12px; align-items: center; }
+.download-intro > svg { color: var(--green); width: 22px; height: 22px; }
+.download-intro strong { font-size: 14px; }
+.download-intro p { font-size: 12px; margin-top: 3px; }
+.download-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.download-actions select { color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 10px; min-height: 44px; font-size: 13px; }
+.download-actions .button { min-height: 44px; }
+.download-help { width: 100%; font-size: 11px; margin: 0; }
+@media (max-width: 640px) {
+  .download-bar { padding: 16px; gap: 14px; }
+  .download-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .download-actions select { grid-column: 1 / -1; width: 100%; font-size: 16px; }
+  .download-actions [data-download="text"] { grid-column: 1 / -1; }
+}

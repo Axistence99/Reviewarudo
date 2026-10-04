@@ -17,7 +17,7 @@ function resetStudy(){cardOrder=material.flashcards.map((_,i)=>i);cardIndex=0;kn
 function resetQuiz(){questionIndex=0;answers=[];selected=null;submitted=false;}
 function setMaterial(data){material=data;resetStudy();save();$('step-study').classList.add('active');show('reviewer');}
 try{const stored=sessionStorage.getItem('reviewarudo-material');if(stored){material=JSON.parse(stored);if(!Array.isArray(material.flashcards)||!Array.isArray(material.topics))material=null;else resetStudy();}}catch{material=null;}
-function show(view){if(busy)return;currentView=view;for(const name of Object.keys(labels))$(`view-${name}`).hidden=name!==view;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-current',b.dataset.view===view?'page':'false');});$('crumb').textContent=labels[view];if(view!=='upload')render();icons();
+function show(view){if(busy)return;currentView=view;for(const name of Object.keys(labels))$(`view-${name}`).hidden=name!==view;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-current',b.dataset.view===view?'page':'false');});$('crumb').textContent=labels[view];$('material-downloads').hidden=!material||view==='upload'||view==='export';if(view!=='upload')render();icons();
   // View changes do not navigate the browser, so reset the previous view's scroll.
   window.scrollTo({top: 0, behavior: 'instant'});
   $('main').focus({preventScroll: true});
@@ -70,8 +70,41 @@ const q=qs[questionIndex],choices=mode==='quiz'?q.choices:mode==='true_false'?['
 function submitAnswer(reveal=false){if(submitted)return;const q=questions()[questionIndex];let response;if(mode==='quiz'||mode==='true_false'){if(selected===null)return notify('Choose an answer first.');response=mode==='quiz'?q.choices[selected]:selected===0;}else{response=$('practice-answer').value.trim();if(!response&&!reveal)return notify('Enter an answer, or choose Reveal answer.');}notify('');const expected=mode==='quiz'?q.correct_answer:q.answer;const normalize=x=>String(x).normalize('NFKC').toLowerCase().replace(/[.,!?;:]+$/,'').trim();const correct=!reveal&&normalize(response)===normalize(expected);answers.push(correct);submitted=true;document.querySelectorAll('[data-choice]').forEach(button=>{const c=mode==='quiz'?q.choices[Number(button.dataset.choice)]:Number(button.dataset.choice)===0;button.disabled=true;button.classList.toggle('correct',c===expected);button.classList.toggle('incorrect',Number(button.dataset.choice)===selected&&!correct);});if($('practice-answer'))$('practice-answer').disabled=true;$('quiz-feedback').innerHTML=`<div class="feedback"><strong>${reveal?'Answer revealed (not scored as correct)':correct?'Correct — nicely done!':'Not quite. Here’s the answer:'}</strong><p>${e(String(expected))}</p>${q.explanation?`<p>${e(q.explanation)}</p>`:''}${source(q.source_reference)}${!['quiz','true_false'].includes(mode)?'<small>Text answers use normalized exact matching. Equivalent wording may be marked incorrect.</small>':''}</div>`;document.querySelector('[data-quiz=submit]').disabled=true;const rb=document.querySelector('[data-quiz=reveal]');if(rb)rb.disabled=true;document.querySelector('[data-quiz=next]').hidden=false;}
 function updateRead(){if($('read-count')){$('read-count').textContent=`${readTopics.size} of ${material.topics.length} topics marked read`;$('read-progress').value=readTopics.size;}}
 $('main').addEventListener('change',event=>{if(event.target.matches('[data-read]')){const id=Number(event.target.dataset.read);event.target.checked?readTopics.add(id):readTopics.delete(id);updateRead();}});
+
+function materialForDownload() {
+  if ($('download-scope').value === 'all') return {data: material, suffix: 'all-materials'};
+  const data = {title: material.title, source_files: material.source_files, warnings: material.warnings,
+    summary: null, topics: [], flashcards: [], quiz: [], identification: [], true_false: [],
+    fill_in_the_blank: [], key_terms: [], study_guide: null};
+  let suffix = currentView;
+  if (currentView === 'reviewer') { data.summary = material.summary; data.topics = material.topics; }
+  if (currentView === 'flashcards') data.flashcards = material.flashcards;
+  if (currentView === 'quiz') { data[mode] = material[mode]; suffix = mode; }
+  if (currentView === 'key_terms') data.key_terms = material.key_terms.length ? material.key_terms : material.topics.flatMap(t => t.key_terms);
+  if (currentView === 'study_guide') data.study_guide = material.study_guide;
+  return {data, suffix};
+}
+function downloadMaterial(format) {
+  if (!material) return;
+  const {data, suffix} = materialForDownload();
+  const fields = ['summary','topics','flashcards','quiz','identification','true_false','fill_in_the_blank','key_terms','study_guide'];
+  if (!fields.some(key => Array.isArray(data[key]) ? data[key].length : data[key])) {
+    notify('No content in this material yet. Select “All materials” or generate this material first.');
+    return;
+  }
+  notify('');
+  const name = `${material.title.replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 80) || 'Reviewarudo'}-${suffix}`;
+  if (format === 'json') download(name + '.json', JSON.stringify(data, null, 2), 'application/json');
+  if (format === 'text') {
+    const content = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== null && (!Array.isArray(value) || value.length)));
+    download(name + '.txt', asText(content), 'text/plain;charset=utf-8');
+  }
+  if (format === 'print') printMaterial(data);
+}
+
 $('main').addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b||busy)return;
+  if(b.dataset.download) { downloadMaterial(b.dataset.download); return; }
   if(b.hasAttribute('data-go-upload'))show('upload');
   if(b.id==='flashcard')flip();
   if(b.dataset.card)cardAction(b.dataset.card);

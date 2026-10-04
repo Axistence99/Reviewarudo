@@ -2,8 +2,9 @@ export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => 
 export const size = n => n < 1048576 ? `${Math.ceil(n/1024)} KB` : `${(n/1048576).toFixed(1)} MB`;
 export function download(name, content, type) {
   const url = URL.createObjectURL(new Blob([content], {type}));
-  const link = document.createElement('a'); link.href = url; link.download = name; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const link = document.createElement('a'); link.href = url; link.download = name;
+  link.hidden = true; document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 export function asText(value, indent = '') {
   if (value === null || value === undefined) return '';

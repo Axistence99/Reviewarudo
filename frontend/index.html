@@ -46,6 +46,11 @@
 <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="crumb">Create reviewer</strong></div><span class="session-tag"><span></span>Personal study session</span></header>
 <main id="main" tabindex="-1">
 <div id="notification" role="alert" hidden></div>
+<section id="material-downloads" class="download-bar" aria-label="Download study materials" hidden>
+<div class="download-intro"><i data-lucide="download"></i><div><strong>Keep a copy of your materials</strong><p>Download for offline study. No extra AI request.</p></div></div>
+<div class="download-actions"><label class="sr-only" for="download-scope">Materials to download</label><select id="download-scope"><option value="current">Current material</option><option value="all">All materials</option></select><button class="button primary" data-download="text"><i data-lucide="file-text"></i>Download TXT</button><button class="button secondary" data-download="json">JSON</button><button class="button secondary" data-download="print"><i data-lucide="printer"></i>Print / PDF</button></div>
+<p class="download-help">PDF: choose “Save as PDF” in the print dialog. Quiz downloads include answers. PNG images are available on individual cards and reviewer topics.</p>
+</section>
 <section id="view-upload" class="view">
 <div class="page-heading"><div><div class="eyebrow"><span></span>LESS PREP. MORE PROGRESS.</div><h1>Your notes. A smarter way to study.</h1><p>Turn lecture slides and readings into study materials that click.</p></div><button class="button secondary" id="demo"><i data-lucide="play"></i>Try a demo</button></div>
 <div class="steps" aria-label="Workflow"><div class="step active" id="step-upload"><b>1</b><span>Upload materials</span></div><span class="step-line"></span><div class="step" id="step-config"><b>2</b><span>Make it yours</span></div><span class="step-line"></span><div class="step" id="step-study"><b>3</b><span>Start learning</span></div></div>
