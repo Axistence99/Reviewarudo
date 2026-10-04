@@ -1,329 +1,291 @@
 # Reviewarudo
 
-**Your notes. A smarter way to study.**
+**Turn any material into your learning orbit.**
 
-Reviewarudo turns academic PDFs, Word documents, and PowerPoint presentations into source-referenced reviewers, flashcards, quizzes, glossaries, summaries, and study guides using Google Gemini. No account, database, Node.js, npm, bundler, or frontend build is required.
+Reviewarudo is a no-login study workspace that extracts text from academic **PDF, DOCX, and PPTX** files and asks Google Gemini to create source-referenced learning materials. The interface runs as static files on GitHub Pages; a Python API on Render handles extraction and generation.
 
-## Quick start
+- Frontend: <https://axistence99.github.io/Reviewarudo/>
+- Configured API: <https://reviewarudo.onrender.com>
+- Interactive API reference: <https://reviewarudo.onrender.com/docs>
 
-- Run the static frontend and click **Try a demo**. No backend or API key is required for the demo.
-- For real generation: deploy the backend, configure its Gemini key and model, then set the single `API_BASE_URL` in `frontend/js/api.js`.
-- Deployment files are included. **This project does not include credentials or a pre-provisioned Render service.** Live Gemini generation must be verified with your model and account before launch.
+These are deployment addresses, not an uptime or model-access guarantee. Check `/health` and a real generation request after deploying.
 
 ## Features
 
-- Multi-file drag-and-drop upload, browse, removal, validation, actual upload progress, extraction preview, and combination of documents.
-- PDF page text, DOCX headings/lists/tables, and PPTX titles/text/bullets/tables/speaker notes.
-- Nine output types: comprehensive reviewer, flashcards, multiple choice, identification, true/false, fill-in-the-blank, glossary, summary, study guide.
-- Academic level, question difficulty, question count (10/20/30/50/100), language (English/Filipino/custom), and learning style settings.
-- Topic cards, collapsible sections, read progress, and visible source references.
-- Flippable flashcards, previous/next, Fisher–Yates shuffle, known/review-again tracking, Space and arrow-key shortcuts.
-- Interactive quizzes with one submission per question, immediate feedback, explanations, progress, score, and restart.
-- Separate practice modes for identification, true/false, and fill-in-the-blank.
-- Browser print / Save as PDF with source files and answer key; JSON and text downloads; individual flashcard/topic PNG exports.
-- Space-inspired creation workspace with a lavender orbit illustration, responsive creation deck, and live study-set sidebar.
-- Library for the current generated set and in-session reading, flashcard, and quiz progress.
-- Responsive layouts, light/dark themes, visible focus, semantic controls, accessible labels, reduced-motion support. The orbit design defaults to dark; an explicit theme choice is remembered.
-- Demo content with its illustrative source notes under `frontend/assets/`.
-- Temporary generated-resource storage in `sessionStorage`; theme preference in `localStorage`.
-- Backend-only Gemini credentials, typed input/output validation, bounded JSON recovery, safe escaped UI output, CORS allowlist, request limits, and a basic in-memory rate limit.
+- Multiple-file drag/drop or browse, removal, size/type checks, upload progress, and extracted-text preview.
+- Nine formats: reviewer, flashcards, multiple choice, identification, true/false, fill-in-the-blank, key terms, summary, and study guide.
+- Academic level, question difficulty, 10/20/30/50/100 questions per activity, language, and learning-style settings. Extra settings are under **Customize your study session**.
+- Collapsible reviewer topics and read tracking; flashcard flip/shuffle/known/review-again; interactive quizzes with feedback, explanations, score, and restart.
+- Current-session **Library** and **Progress** views. These are not a saved cloud library or a historical analytics service.
+- **Current material** or **All materials** downloads as TXT/JSON; browser print/Save as PDF; individual flashcard and reviewer-topic PNG exports.
+- Responsive orbit-themed layout, light/dark toggle, keyboard controls, focus indicators, source references, and reduced-motion handling. Dark is the first-visit default; an explicit preference is remembered.
+- **Explore a sample study set** works without a backend or API key. It loads `frontend/assets/demo.json`, not an AI response.
 
-## Architecture
+## Technology and architecture
+
+| Layer | Implementation |
+|---|---|
+| Interface | HTML5, ES modules / vanilla JavaScript, custom CSS, Tailwind CDN, Lucide CDN |
+| Typography | Optional Google Fonts with local fallbacks |
+| API | Python 3.11+, FastAPI, Uvicorn, Pydantic v2, python-dotenv, python-multipart |
+| Extraction | pypdf, python-docx, python-pptx |
+| Gemini transport | HTTPX, Gemini REST `generateContent` with structured JSON output |
+| Backend tests | pytest and FastAPI TestClient; Gemini responses mocked |
+| Browser tests | Python Playwright + Chromium, installed separately for development |
+| Hosting | GitHub Pages + Render Python web service |
 
 ```text
-Static frontend / GitHub Pages
-        │ REST + JSON (multipart for extraction)
-        ▼
-FastAPI / Render
-        ├── File validation → pypdf / python-docx / python-pptx
-        ├── Section-aware chunking → intermediate notes (large sources)
-        └── Gemini API → JSON parsing → Pydantic validation → source-reference checks
-        │
-        ▼
-Browser learning interface → study / practice / export
+Browser / GitHub Pages
+  ├─ POST /api/extract (multipart files)
+  │      → FastAPI → document parsers → sections with source references
+  └─ POST /api/generate (extracted text + settings)
+         → section-aware chunks → summaries only when needed
+         → selected-output schema / bounded batches → Gemini
+         → JSON + schema + source-coordinate checks
+         → complete material envelope → study / practice / export
 ```
 
-There is no server-side database, login, durable job queue, or document storage. Upload parsers may spool larger files to the operating system’s temporary storage; upload handles are closed after extraction. Extracted text is returned to the browser and sent back with the generation request. Generated resources are stored only in that tab’s `sessionStorage`, and can be removed with **Clear study session**. Browser session restore may restore session storage; clear the session explicitly on shared devices.
+**There is no database, account system, durable job queue, or frontend build.** No Node.js, npm, bundler, React, or TypeScript is required to run or deploy the application. GitHub's supplied actions have their own internal runtime; the application itself does not use Node.js.
 
-Extracted content is sent to Google for generation. Google's API data-handling and retention terms apply. Do not upload private student records, credentials, or sensitive documents. No claim is made that third-party processing has zero retention.
+### State and privacy
 
-## Project structure
+| Data | Lifetime / location |
+|---|---|
+| Selected file objects and extracted text | JavaScript memory until removed/replaced or the page closes/reloads |
+| Upload parsing | Request lifetime; multipart uploads may spill into OS temporary files; handles are closed |
+| Generated material | Tab-scoped `sessionStorage`, key `reviewarudo-material` |
+| Read topics, card knowledge, current quiz answers | JavaScript memory; resets on reload or a new study set |
+| Theme | `localStorage`, key `reviewarudo-theme` |
+| Rate-limit timestamps | Backend process memory; reset on restart |
+
+Use **Clear session** in the footer to remove the app's generated set and selected materials. It does not delete downloaded exports or the theme preference. Browser session restore may restore `sessionStorage`; explicitly clear shared devices.
+
+Generation sends extracted text to Google. Google's API data-handling and retention terms apply; the app does not guarantee zero third-party retention. Do not upload private student records, credentials, or sensitive documents.
+
+## Project map
 
 ```text
 frontend/
-  index.html
-  css/styles.css
-  js/app.js                 # State, upload, study interactions
-  js/api.js                 # Single backend URL and request transport
-  js/ui.js                  # Escaped rendering and print layout
-  js/utils.js               # Downloads, text, PNG rendering
-  assets/demo.json
-  assets/sample-notes.txt
+  index.html                    Static shell, forms, navigation, theme bootstrapping
+  css/styles.css                Base components and responsive/print styles
+  css/orbit.css                 Orbit theme and layout overrides (loaded second)
+  js/app.js                     Session state, view routing, uploads, study events
+  js/api.js                     Single backend URL and XMLHttpRequest transport
+  js/ui.js                      Escaped view templates, notices, print rendering
+  js/utils.js                   HTML escaping, file downloads, text and PNG exports
+  assets/                       Favicon/brand images, demo JSON, sample source notes
 backend/
-  main.py                   # API, limits, CORS, errors
-  requirements.txt
-  .env.example
-  services/extraction.py
-  services/gemini.py
-  services/generator.py
-  utils/validation.py
-  tests/test_app.py
-tests/browser_smoke.py
-.github/workflows/pages.yml
-.github/workflows/test.yml
-render.yaml
-README.md
+  main.py                       App, endpoints, CORS, request/rate/concurrency guards
+  requirements.txt              Python application and backend-test dependencies
+  .env.example                  Non-secret configuration template
+  services/extraction.py        Signature/container checks and text extraction
+  services/gemini.py            System prompt, HTTP calls, repair and error mapping
+  services/generator.py         Chunking, synthesis planning, batch merge, citations
+  utils/validation.py           Strict request and output models
+  tests/test_app.py              Extraction, API, validation, CORS, and health tests
+  tests/test_generation_recovery.py  Provider errors, batching, and chunk regressions
+tests/
+  browser_smoke.py               Core study interactions, demo, theme, downloads
+  generation_workflow.py         Mock upload/generation; scroll/error regressions
+  material_downloads.py          Scoped exports, download contents, print trigger
+  orbit_workspace.py            Library, progress, selection summary, settings
+  responsive_layout.py          13 viewport widths in both themes
+  accessibility_security.py     Keyboard/labels, escaped hostile content, print PDF
+.github/workflows/
+  pages.yml                     Static deployment on matching main-branch pushes
+  test.yml                      Backend tests on pushes and pull requests
+render.yaml                     Optional Render Blueprint
+.editorconfig                   Basic editor whitespace conventions
+docs/API.md                     REST request/response contracts and errors
+docs/DEVELOPMENT.md              Implementation guide, testing and review checklist
 ```
 
-## Local development
+## Local setup
 
-Python **3.11 or later** is required.
+### 1. Backend
 
-### Backend
+From the repository root:
 
 ```bash
 cd backend
 python -m venv .venv
 ```
 
-macOS/Linux:
+Activate the environment:
 
 ```bash
+# macOS / Linux
 source .venv/bin/activate
 ```
 
-Windows (Command Prompt):
-
 ```bat
+:: Windows Command Prompt
 .venv\Scripts\activate
 ```
 
-Install and configure:
+```powershell
+# Windows PowerShell (subject to your execution policy)
+.venv\Scripts\Activate.ps1
+```
+
+Install packages and create local configuration:
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
 ```
 
-On Windows, use `copy .env.example .env`. Edit `.env` locally, then run:
+On Windows Command Prompt use `copy .env.example .env`. Edit `.env` locally; never commit it. Then, **from `backend/`**:
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Backend: `http://localhost:8000`; API docs: `/docs`; ReDoc: `/redoc`.
+Health: `http://localhost:8000/health`; Swagger: `/docs`; ReDoc: `/redoc`. Extraction and health checks work without a Gemini key; generation does not.
 
-### Frontend
+### 2. Frontend
 
-In another terminal, from the repository root:
+In a second terminal, **from the repository root**:
 
 ```bash
 python -m http.server 8080 --directory frontend
 ```
 
-Open `http://localhost:8080`. For local generation, temporarily set this value in `frontend/js/api.js`:
+Open `http://localhost:8080`. Do not use `file://`; module imports and demo fetching require HTTP.
+
+The committed frontend uses the public Render API. For local backend development, temporarily change `frontend/js/api.js`:
 
 ```javascript
 export const API_BASE_URL = 'http://localhost:8000';
 ```
 
-Do not open `index.html` using `file://`: ES modules and demo fetching require HTTP. The localhost URL is only for development on your own computer. For remotely hosted previews, use a reachable HTTPS backend with the preview origin added to CORS; browser localhost is not the remote server.
+Keep `http://localhost:8080` in backend `CORS_ORIGINS`, and restore the public HTTPS API URL before pushing a production deployment. In remotely hosted previews, browser localhost is not the remote server—use a browser-reachable HTTPS API with the preview origin allowed.
 
-### Environment variables
+### Build
 
-| Variable | Required | Purpose |
+**There is no frontend build command.** Serve or publish the existing `frontend/` directory. The backend installation step is `pip install -r requirements.txt`; Uvicorn loads Python code directly.
+
+### Configuration
+
+| Name | Default / location | Meaning |
 |---|---|---|
-| `GEMINI_API_KEY` | For generation | Backend-only Google API credential |
-| `GEMINI_MODEL` | For generation | Currently available model ID that supports JSON-schema structured output and `generateContent`; use the ID without `models/` |
-| `CORS_ORIGINS` | For deployed frontend | Comma-separated allowed origins, no paths/trailing slashes |
-| `MAX_FILE_MB` | No | File limit, default 10; keep the frontend limit synchronized if changing it |
-| `RATE_LIMIT_PER_HOUR` | No | POST requests per client IP per process, default 12; extraction and generation each count |
-| `PORT` | Render supplies | Web service listening port |
+| `GEMINI_API_KEY` | No default; backend only | Google API credential; required for generation |
+| `GEMINI_MODEL` | No default; backend only | Available model ID supporting `generateContent` and JSON-schema output, without `models/` |
+| `CORS_ORIGINS` | Code fallback: `http://localhost:8080` | Comma-separated origins, no paths/trailing slashes; example file also includes GitHub Pages |
+| `MAX_FILE_MB` | `10` | Server per-file upload limit; frontend independently enforces 10 MB, so coordinate changes |
+| `RATE_LIMIT_PER_HOUR` | `12` | POST requests per client IP per backend process; extraction and generation each count |
+| `PORT` | Supplied by Render | Used by the production Uvicorn start command |
+| `PYTHON_VERSION` | `3.11.11` in `render.yaml` | Render runtime setting, not read by application code |
+| `RENDER_GIT_COMMIT` | Supplied by Render; absent locally | Public deployed revision exposed in `/health`; no secret |
+| `API_BASE_URL` | `frontend/js/api.js` | Public backend base URL; currently `https://reviewarudo.onrender.com` |
 
-Example backend environment:
-
-```dotenv
-GEMINI_API_KEY=your-secret-key
-GEMINI_MODEL=your-current-supported-model-id
-CORS_ORIGINS=https://axistence99.github.io,http://localhost:8080
-MAX_FILE_MB=10
-RATE_LIMIT_PER_HOUR=12
-```
-
-Select an available structured-output model in your Google account; this project intentionally does not assume a model name remains supported forever. No key goes into frontend files, GitHub Pages, Git commits, or screenshots. `.env` is ignored by Git.
-
-## Deploy to Render
-
-### Blueprint option
-
-1. Push the project to GitHub.
-2. In Render, create a new **Blueprint** and connect the repository.
-3. Render reads `render.yaml` and creates a free Python web service.
-4. Supply `GEMINI_API_KEY` and `GEMINI_MODEL` in Render, not in source control.
-5. Confirm `CORS_ORIGINS=https://axistence99.github.io` (or your actual frontend origin).
-6. Deploy and open `https://<your-service>.onrender.com/health`.
-
-Expected response once configured:
-
-```json
-{"success":true,"data":{"status":"ok","ai_configured":true}}
-```
-
-`ai_configured` means values exist, not that credentials, quota, and model access have been verified.
-
-### Manual service option
-
-- Runtime: Python
-- Root directory: `backend`
-- Build: `pip install -r requirements.txt`
-- Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- Health check: `/health`
-- Add the same environment variables listed above.
-
-The free service can sleep or restart. Cold starts and long requests may fail or time out; retry with smaller documents or fewer outputs. There is no paid hosting or AI quota included. Keep a single worker on the free service: concurrency and rate limits are per process. Heavy public use requires more robust infrastructure.
-
-## Deploy to GitHub Pages
-
-1. Set `API_BASE_URL` in `frontend/js/api.js` to your real HTTPS Render URL.
-2. Push to the repository’s `main` branch.
-3. Open **Repository → Settings → Pages → Build and deployment → Source → GitHub Actions**.
-4. Run the included **Deploy static frontend** workflow if it has not already run. It uploads only `frontend/`, not backend code or credentials.
-5. The expected project-site path for this repository is `https://axistence99.github.io/Reviewarudo/`.
-6. Open the deployed site and run the demo.
-7. Check backend `/health`, upload a small text-based document, preview the extracted content, generate one resource, and check a citation.
-8. Test every selected resource, mobile layout, dark mode, print/PDF, and downloads.
-
-All frontend paths are relative and compatible with a GitHub Pages repository subpath. CORS uses only the origin `https://axistence99.github.io`, **not** `/Reviewarudo/`. If your default branch has another name, update the Pages workflow’s branch filter. Protected environments may require deployment approval.
-
-Alternatively, publish the contents of `frontend/` at the root of a dedicated Pages branch/repository. GitHub's branch-based Pages setup does not directly publish an arbitrary `/frontend` subdirectory; use the included workflow for this monorepo.
-
-Tailwind and Lucide load through CDN as requested. Custom CSS provides the layout independently of Tailwind; text controls still function if the icon CDN is unavailable. Google Fonts is optional and falls back to local sans-serif. CDN availability is needed for those external assets, and CDN scripts are a third-party trust dependency.
-
-## API contract
-
-`GET /` — service information. `GET /health` — liveness/configuration flag.
-
-`POST /api/extract` accepts `multipart/form-data`, with 1–8 repeated fields named `files`.
-
-```bash
-curl -F "files=@biology.pdf" http://localhost:8000/api/extract
-```
-
-Successful extraction:
-
-```json
-{
-  "success": true,
-  "data": {
-    "files": [{
-      "source_type": "pdf",
-      "filename": "biology.pdf",
-      "sections": [{"page": 1, "title": "Cells", "content": "Cells are the basic units of life."}]
-    }],
-    "characters": 34,
-    "approximate_tokens": 9
-  }
-}
-```
-
-`POST /api/generate` accepts extracted documents (not binary uploads):
-
-```json
-{
-  "files": [{
-    "source_type": "pdf",
-    "filename": "biology.pdf",
-    "sections": [{"page": 1, "title": "Cells", "content": "Cells are the basic units of life."}]
-  }],
-  "material_types": ["reviewer", "flashcards", "quiz"],
-  "difficulty": "college",
-  "question_difficulty": "mixed",
-  "question_count": 20,
-  "language": "English",
-  "learning_style": "Exam Preparation"
-}
-```
-
-This tiny example demonstrates the request shape, not a source sufficient for 20 distinct questions. Insufficient source coverage produces fewer items and a warning rather than intentional padding.
-
-Generation returns `{"success":true,"data":{...}}`. The complete response model is in `backend/utils/validation.py`: `title`, `source_files`, `summary`, `topics`, `flashcards`, `quiz`, `identification`, `true_false`, `fill_in_the_blank`, `key_terms`, `study_guide`, and `warnings`. Unselected resource arrays are instructed to be empty; optional summary/guide objects use null.
-
-All application API errors use:
-
-```json
-{"success":false,"error":{"code":"INVALID_FILE","message":"The uploaded file is not supported."}}
-```
-
-Typical status codes: 400 invalid/corrupt document, 413 limits exceeded, 422 bad request schema, 429 rate limit, 502 AI error, 503 busy, 504 generation timeout. Infrastructure failures outside the app may produce other response shapes; the frontend handles these as connection failures. Swagger/ReDoc intentionally return HTML and OpenAPI returns its standard schema.
-
-## Generation, recovery, and fidelity
-
-1. Validate extensions, MIME where provided, signatures/container structure, compressed document expansion, size, and counts.
-2. Extract page/slide/heading sections. Preview is available before generation; direct Generate also extracts automatically.
-3. Estimate tokens as characters / 4 (a heuristic, especially approximate for non-English languages).
-4. Accumulate section-labelled paragraphs into chunks of about 18,000 characters. Oversized paragraphs split at whitespace where possible; section references repeat across split pieces.
-5. For multiple chunks, generate compact source-referenced notes and hierarchically reduce if necessary before final synthesis. Chunk processing is sequential to avoid request bursts.
-6. Request structured JSON with a Pydantic-derived JSON schema. The system prompt prioritizes source fidelity and treats embedded document instructions as untrusted data.
-7. Parse directly, strip accidental code fences, or recover the first decodable JSON object. Never use `eval` or execute model code.
-8. Validate typed schema, four distinct quiz choices and correct-answer membership. Invalid output triggers bounded full regeneration from the original prompt. Transient upstream failures use bounded backoff. There are at most three attempts per model call.
-9. Verify every source reference points to an actual supplied file and section. Invalid citations or empty selected resources return controlled errors.
-
-**Important limitations:** Valid JSON and valid reference coordinates do not prove factual correctness or that a sentence is entailed by the cited source. There is no independent semantic fact-checker. Always verify important information. Large-document synthesis can omit detail; the UI warns when it is used. Questions are prompted to cover distinct facts, but semantic duplication is not mechanically guaranteed.
-
-- PDF extraction preserves layout text and page numbers; headings are heuristic. No OCR, image understanding, or reliable reconstruction of complex PDF reading order/math is provided.
-- Word files do not contain stable rendered page numbers. Their references are explicitly displayed as **Section**, based on extracted headings.
-- DOCX list markers are normalized; exact multilevel numbering is not reconstructed. Tables become pipe-separated text.
-- Slides include text, tables, and available notes, not text embedded in images or charts.
-- Text-answer grading is case-normalized exact matching with trailing punctuation normalization, not semantic grading. Equivalent phrasing can be marked incorrect; the UI discloses this.
-- PDF export is native browser **Print → Save as PDF**, not an automatic binary-PDF download.
-- PNG export is intended for individual, reasonably sized cards/topics; unusually long content can exceed browser canvas limits.
-- Source file names should be unique; rename same-named documents before combining them.
-
-## Limits and public-service security
-
-Defaults: 10 MB/file, 8 files, 30 MB aggregate uploads, 32 MB actual HTTP body, 400,000 extracted characters combined, 500 PDF pages or slides/file, 60 MB expanded Office archive, 5,000 ZIP entries. Two extraction requests and two generation requests can run concurrently; additional requests receive a busy response. Generation is bounded to 15 minutes server-side, and infrastructure may impose shorter limits.
-
-This is a practical initial no-login/no-database deployment, **not a fully abuse-resistant public AI gateway**. CORS is not authentication. An unauthenticated endpoint can consume your AI quota. The in-memory rate limiter resets on restart and is neither distributed nor persistent; verify trusted-proxy/client-IP behavior on your deployment. Never broadly trust arbitrary forwarded headers. Before broad public launch:
-
-- Set Google API quotas and budget alerts; limit key usage to the required API.
-- Consider a privacy-conscious challenge and edge rate limiting; enforce any challenge on the backend.
-- Monitor service health and upstream errors without logging documents or secrets.
-- Load-test on the actual Render instance and verify memory/CPU behavior with representative files.
-- Consider isolated extraction workers and stronger resource limits for adversarial file uploads.
-- Review dependency/security updates and your privacy notice.
-- A paid service or durable queue may be necessary for heavy or long-running workloads.
+Model access, pricing, quotas, and availability depend on your Google project. The app does not select a default Gemini model. Choose a currently supported structured-output model from [Google's model documentation](https://ai.google.dev/gemini-api/docs/models). Never put the API key in frontend code, GitHub Pages, or chat.
 
 ## Testing
 
-Backend tests:
+From `backend/` with dependencies installed:
 
 ```bash
-cd backend
 python -m pytest -q
 ```
 
-They cover real PDF/DOCX/PPTX extraction fixtures, speaker notes, tables, blank/corrupt files, upload size, source validation, chunking, strict booleans, malformed-JSON recovery, bounded AI repair (mocked), CORS, rate limits, routes, and controlled errors.
+From the repository root, syntax/import compilation:
 
-Optional browser tests (Python tooling only; not required for deployment):
+```bash
+python -m compileall -q backend tests
+```
+
+For browser tests, install developer tooling separately (not needed by Render or Pages):
 
 ```bash
 pip install playwright
 python -m playwright install --with-deps chromium
-# Keep the frontend HTTP server on port 8080 running in a separate terminal.
-python tests/browser_smoke.py
 ```
 
-Browser smoke checks cover demo navigation, read tracking, flashcard interactions, quiz feedback, fill-in grading, glossary/guide, downloads, session restoration, theme, and mobile overflow. Tests save screenshots to ignored `tests/*.png` files.
+Keep the frontend server on port 8080 running in a separate terminal. From the repository root:
 
-**Verification performed during implementation:** 24 backend tests passed; Chromium browser smoke checks passed. Live Google API calls, hosted Render behavior, and GitHub Pages deployment have not been verified without account configuration. A real end-to-end smoke test remains a release gate.
+```bash
+python tests/browser_smoke.py
+python tests/generation_workflow.py
+python tests/material_downloads.py
+python tests/orbit_workspace.py
+python tests/responsive_layout.py
+python tests/accessibility_security.py
+```
 
-## Resources needed from the owner
+Browser tests do not call live Gemini: they use the included demo and mock generation routes. The last script also reads a browser-produced print PDF using pypdf, already in backend requirements. Screenshot/PDF artifacts in `tests/` are ignored by Git. Playwright browser binaries/system libraries may need reinstalling in a new environment.
 
-1. A repository-scoped writable GitHub connection/deploy key. A deploy key authenticates access to this repo, not the personal account identity.
-2. Preferred commit name and a GitHub-verified/noreply author email for attribution.
-3. A Render account connected to the repository.
-4. A Google Gemini API key, currently supported structured-output model, and sufficient quota. Configure secrets directly in Render, never in chat or frontend code.
-5. The resulting Render HTTPS service URL.
-6. GitHub Pages set to GitHub Actions, and approval to merge/deploy the initial branch.
+GitHub's `test.yml` currently runs **backend pytest on Python 3.11 only**; browser tests are developer-run, not an existing CI guarantee. Local test results, production smoke results, and code review are different checks; do not infer live Gemini readiness from mocked tests or `ai_configured`.
 
-No database, storage bucket, custom domain, or paid frontend tooling is required for this initial version.
+See [development notes](docs/DEVELOPMENT.md) for coverage boundaries and a release checklist.
+
+## API and database
+
+| Route | Purpose |
+|---|---|
+| `GET /` | Service name and documentation path |
+| `GET /health` | Process liveness, presence of AI settings, deployed revision |
+| `POST /api/extract` | Repeated multipart `files` → extracted documents and size estimates |
+| `POST /api/generate` | Extracted documents + settings → validated learning materials |
+| `GET /docs`, `/redoc`, `/openapi.json` | FastAPI-generated API documentation |
+
+Application endpoints use `success/data` or `success/error` envelopes. Documentation endpoints keep their native HTML/OpenAPI formats. See [API contracts and error codes](docs/API.md).
+
+**Database structure:** none. There are no tables, migrations, persistence models, or database environment variables to configure.
+
+## Deployment
+
+### GitHub Pages
+
+1. Set the public API URL in `frontend/js/api.js`.
+2. Enable **Repository → Settings → Pages → Source: GitHub Actions** once.
+3. Push approved changes to `main`. The Pages workflow triggers when `frontend/**` or its workflow file changes; backend/docs-only pushes do not redeploy Pages.
+4. Alternatively, choose **Run workflow → main** in the Deploy static frontend workflow.
+5. Wait for a successful deployment, then verify the public site, demo, upload, generation, and exports.
+
+The workflow uploads only `frontend/`. All frontend resource paths are relative to support `/Reviewarudo/`. No Jekyll, npm install, or build task is required. Branch-based Pages settings do not directly publish arbitrary `/frontend` folders; use the workflow for this monorepo.
+
+CORS must allow **`https://axistence99.github.io`**, not the repository path. An SSH deploy key can push approved commits but does not grant GitHub settings/API administration or personal-account authentication.
+
+### Render
+
+For the existing service, verify that **Auto-Deploy** is enabled for `main`; otherwise use **Manual Deploy → Deploy latest commit**. A Git push does not prove the backend deployed.
+
+Manual service configuration:
+
+| Setting | Value |
+|---|---|
+| Service type | Web Service |
+| Runtime | Python |
+| Branch | `main` |
+| Root directory | `backend` |
+| Build | `pip install -r requirements.txt` |
+| Start | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Health check | `/health` |
+| Secrets | `GEMINI_API_KEY`, `GEMINI_MODEL` |
+| CORS | `https://axistence99.github.io` |
+
+No disk, database, or frontend service on Render is necessary. Set secrets directly in Render. For a **new** deployment, the optional `render.yaml` Blueprint creates a service named `reviewarudo-api`; the current manually named service URL is `reviewarudo.onrender.com`. A Blueprint is not automatically applied to an already-created service.
+
+Verify the revision on the deployed API:
+
+```json
+{"success":true,"data":{"status":"ok","ai_configured":true,"revision":"<deployed commit SHA>"}}
+```
+
+Locally `revision` is null unless the environment variable is set. `ai_configured: true` only checks that the two variables exist—it is not a credential, quota, model-access, or semantic-quality test. After deployment, use a small non-sensitive source for a real generation test.
+
+### Operations and limitations
+
+- Render Free can sleep/restart. Cold starts can delay the first request; infrastructure may time out before the app's 15-minute deadline. Browser transport allows 16 minutes. There is no durable queue or reconnect/resume.
+- Two extraction requests and two generation requests can run concurrently per process. Additional requests get `BUSY`; extraction runs in worker threads, not isolated processes.
+- Basic limits: 10 MB/file, 8 files, 30 MB total upload, 32 MB actual request body, 400,000 extracted characters total, 500 PDF pages/PPTX slides, 60 MB expanded Office ZIP, 5,000 ZIP entries. These are safeguards, not protection against every parser/resource attack.
+- Per-IP rate limiting resets on process restart, is not distributed, and depends on trusted proxy/client-IP configuration. Keep a single worker for the intended free-service setup. CORS is **not authentication**; a public no-login endpoint can consume Gemini quota. Use Google-side quota controls/budget alerts, monitoring, and stronger edge protection before broad public use.
+- Larger sources are summarized in stages; large output sets are batched. Both can increase requests, latency, cost, and quota use. Exact duplicate question text is removed; semantically similar questions can remain.
+- Schema/source-coordinate validation does not prove factual accuracy. Verify important facts against the originals. Embedded prompt instructions are treated as untrusted, but the prompt is not a complete prompt-injection defense.
+- No OCR or image/chart interpretation. PDF headings/layout are heuristic; formulas, multi-column slides, tables, and footers can be imperfectly extracted. DOCX references are **sections**, not physical pages; original list numbering is normalized.
+- Text-answer grading uses normalized exact matching, not semantic scoring. Equivalent wording may be marked incorrect. Revealed answers count as incorrect.
+- A new set replaces the current generated set. Progress is not restored after reload. Choosing a practice mode restarts that mode's current score; there is no stored cross-mode history.
+- PDF is native **Print → Save as PDF**, not an automatic PDF download. JSON retains the full envelope; TXT uses readable recursive labels. PNG is intended for reasonably sized individual cards/topics; long words or very long content can exceed canvas limits. PNG uses a fixed light export style independent of the screen theme.
+- Tailwind/Lucide CDN and Google Fonts are third-party network/trust dependencies. Custom CSS and text labels provide fallbacks, but an offline session is not a fully cached offline app.
+- Python dependency ranges are bounded but not locked; test upgrades. Accessibility checks cover selected controls and keyboard paths, not a complete WCAG certification or manual screen-reader audit. Chromium checks do not guarantee every Safari/Firefox/mobile browser behavior.
